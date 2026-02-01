@@ -1,0 +1,60 @@
+services:
+  auth-service:
+    build: ../services/auth-service
+    ports:
+      - "8082:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: antcrowd
+      DB_USER: antcrowd
+      DB_PASSWORD: antcrowd123
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: antcrowd
+      POSTGRES_USER: antcrowd
+      POSTGRES_PASSWORD: antcrowd123
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  dvwa:
+    image: vulnerables/web-dvwa
+    ports:
+      - "8081:80"
+  migrate-auth:
+   image: migrate/migrate
+   volumes:
+     - ../services/auth-service/migrations:/migrations
+   command: >
+     -path=/migrations
+     -database postgres://antcrowd:antcrowd123@postgres:5432/antcrowd?sslmode=disable
+     up
+   depends_on:
+     - postgres
+
+  trust-service:
+    build: ../services/trust-service
+    container_name: trust-service
+    environment:
+      DATABASE_URL: postgresql://antcrowd:antcrowd123@postgres:5432/antcrowd
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
