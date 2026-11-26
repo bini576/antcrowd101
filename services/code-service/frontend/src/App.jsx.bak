@@ -1,0 +1,316 @@
+import { useEffect, useState } from "react";
+import { Bell, X } from "lucide-react";
+import * as api from "./api";
+
+const REFRESH_MS = 5000;
+const LOGIN_URL = import.meta.env.VITE_AUTH_LOGIN_URL || "/login";
+const LOGOUT_URL = import.meta.env.VITE_AUTH_LOGOUT_URL || "/api/auth/logout";
+
+function StatusBadge({ status }) {
+  const colors = { pending: "#f59e0b", approved: "#10b981", in_review: "#3b82f6", completed: "#6366f1", rejected: "#ef4444", open: "#f59e0b" };
+  return <span style={{ display:"inline-block", padding:"2px 10px", borderRadius:12, fontSize:12, fontWeight:600, background:`${colors[status]||"#94a3b8"}22`, color:colors[status]||"#64748b", border:`1px solid ${colors[status]||"#94a3b8"}44` }}>{status}</span>;
+}
+
+function SeverityBadge({ severity }) {
+  const colors = { critical:"#dc2626", high:"#ea580c", medium:"#f59e0b", low:"#22c55e", info:"#3b82f6" };
+  return <span style={{ display:"inline-block", padding:"2px 10px", borderRadius:12, fontSize:12, fontWeight:600, background:`${colors[severity]||"#94a3b8"}22`, color:colors[severity]||"#64748b" }}>{severity}</span>;
+}
+
+/* ─── Unauthenticated / External ─── */
+function UnauthView({ reason }) {
+  return (
+    <div className="page-shell" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh" }}>
+      <div style={{ textAlign:"center", maxWidth:420, padding:"3rem 2rem", background:"#fff", borderRadius:20, boxShadow:"0 4px 24px rgba(0,0,0,.08)" }}>
+        <h1 style={{ fontSize:22, marginBottom:12 }}>Code Security Service</h1>
+        <p style={{ color:"#64748b", marginBottom:24 }}>{reason === "internal" ? "This service is not available for internal researcher accounts. Code review is assigned to external researchers by the platform admin." : "Please sign in to the AntCrowd platform to access the code review workspace."}</p>
+        {reason !== "internal" && <a href={LOGIN_URL} style={{ display:"inline-block", padding:"10px 28px", background:"#c8102e", color:"#fff", borderRadius:12, textDecoration:"none", fontWeight:600 }}>Sign In</a>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Notification Bell ─── */
+function NotifBell({ notifications, onRead }) {
+  const [open, setOpen] = useState(false);
+  const unread = notifications.filter(n => !n.read).length;
+  return (
+    <div style={{ position:"relative" }}>
+      <button type="button" onClick={() => setOpen(!open)} style={{ background:"none", border:"none", cursor:"pointer", position:"relative" }}>
+        <Bell size={20} />
+        {unread > 0 && <span style={{ position:"absolute", top:-4, right:-6, background:"#c8102e", color:"#fff", borderRadius:"50%", width:18, height:18, fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>{unread}</span>}
+      </button>
+      {open && (
+        <div style={{ position:"absolute", right:0, top:32, width:340, background:"#fff", border:"1px solid #e2e8f0", borderRadius:12, boxShadow:"0 8px 32px rgba(0,0,0,.12)", zIndex:100, maxHeight:400, overflow:"auto" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 16px", borderBottom:"1px solid #f1f5f9" }}><strong>Notifications</strong><button type="button" onClick={() => setOpen(false)} style={{ background:"none", border:"none", cursor:"pointer" }}><X size={16} /></button></div>
+          {notifications.length === 0 ? <p style={{ padding:16, color:"#94a3b8", textAlign:"center" }}>No notifications yet.</p> : notifications.map(n => (
+            <div key={n.id} style={{ padding:"10px 16px", borderBottom:"1px solid #f8fafc", background:n.read ? "#fff" : "#fffbeb", cursor:"pointer" }} onClick={() => { if (!n.read) onRead(n.id); }}>
+              <strong style={{ fontSize:13 }}>{n.title}</strong>
+              <p style={{ fontSize:12, color:"#64748b", margin:"4px 0 0" }}>{n.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Org Admin View ─── */
+function OrgAdminView({ user, onLogout }) {
+  const [requests, setRequests] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [draft, setDraft] = useState({ repository_name:"", repository_url:"", review_type:"Security Audit", primary_language:"", description:"", priority:"medium" });
+  const [selectedReq, setSelectedReq] = useState(null);
+  const [findings, setFindings] = useState([]);
+  const [toast, setToast] = useState("");
+
+  async function load() {
+    try { setRequests(await api.fetchRequests()); } catch {}
+    try { const d = await api.fetchDashboard(); setNotifications(d.notifications || []); } catch {}
+  }
+  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, []);
+  useEffect(() => { if (toast) { const t = setTimeout(() => setToast(""), 3000); return () => clearTimeout(t); } }, [toast]);
+
+  async function submit(e) {
+    e.preventDefault();
+    try { await api.createRequest(draft); setToast("Request submitted!"); setShowForm(false); setDraft({ repository_name:"", repository_url:"", review_type:"Security Audit", primary_language:"", description:"", priority:"medium" }); load(); } catch (err) { setToast(err.message); }
+  }
+  async function viewFindings(req) { setSelectedReq(req); try { setFindings(await api.fetchFindings(req.id)); } catch { setFindings([]); } }
+
+  return (
+    <div className="page-shell" style={{ maxWidth:1100, margin:"0 auto", padding:"2rem 1.5rem" }}>
+      <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
+        <div><h1 style={{ fontSize:22, margin:0 }}>Code Security — Organization</h1><p style={{ color:"#64748b", margin:"4px 0 0", fontSize:14 }}>{user.email}</p></div>
+        <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+          <NotifBell notifications={notifications} onRead={async id => { await api.markNotificationRead(id); load(); }} />
+          <button type="button" onClick={() => setShowForm(!showForm)} style={{ padding:"8px 20px", background:"#c8102e", color:"#fff", border:"none", borderRadius:12, fontWeight:600, cursor:"pointer" }}>{showForm ? "Cancel" : "New Request"}</button>
+          <a href={LOGOUT_URL} style={{ padding:"8px 16px", border:"1px solid #e2e8f0", borderRadius:12, textDecoration:"none", color:"#64748b", fontSize:13 }}>Logout</a>
+        </div>
+      </header>
+      {toast && <div style={{ padding:"10px 16px", background:"#ecfdf5", border:"1px solid #6ee7b7", borderRadius:12, marginBottom:16, fontSize:13 }}>{toast}</div>}
+
+      {showForm && (
+        <form onSubmit={submit} style={{ background:"#fff", padding:24, borderRadius:16, border:"1px solid #e2e8f0", marginBottom:24, display:"grid", gap:14 }}>
+          <h3 style={{ margin:0 }}>Submit Code Review Request</h3>
+          <input className="input-base" placeholder="Repository name *" value={draft.repository_name} onChange={e => setDraft({...draft, repository_name:e.target.value})} required />
+          <input className="input-base" placeholder="Repository URL (optional)" value={draft.repository_url} onChange={e => setDraft({...draft, repository_url:e.target.value})} />
+          <select className="input-base" value={draft.review_type} onChange={e => setDraft({...draft, review_type:e.target.value})}>
+            <option>Security Audit</option><option>Architecture Review</option><option>Dependency Audit</option><option>Compliance Check</option>
+          </select>
+          <input className="input-base" placeholder="Primary language *" value={draft.primary_language} onChange={e => setDraft({...draft, primary_language:e.target.value})} required />
+          <textarea className="input-base" placeholder="Description *" rows={3} value={draft.description} onChange={e => setDraft({...draft, description:e.target.value})} required />
+          <select className="input-base" value={draft.priority} onChange={e => setDraft({...draft, priority:e.target.value})}>
+            <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option>
+          </select>
+          <button type="submit" style={{ padding:"10px 0", background:"#c8102e", color:"#fff", border:"none", borderRadius:12, fontWeight:600, cursor:"pointer" }}>Submit Request</button>
+        </form>
+      )}
+
+      {selectedReq ? (
+        <div style={{ background:"#fff", padding:24, borderRadius:16, border:"1px solid #e2e8f0" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+            <h3 style={{ margin:0 }}>Findings for: {selectedReq.repository_name}</h3>
+            <button type="button" onClick={() => setSelectedReq(null)} style={{ background:"none", border:"1px solid #e2e8f0", borderRadius:8, padding:"4px 12px", cursor:"pointer" }}>Back</button>
+          </div>
+          {findings.length === 0 ? <p style={{ color:"#94a3b8" }}>No findings submitted yet for this request.</p> : findings.map(f => (
+            <div key={f.id} style={{ padding:12, borderBottom:"1px solid #f1f5f9" }}>
+              <div style={{ display:"flex", justifyContent:"space-between" }}><strong>{f.title}</strong><SeverityBadge severity={f.severity} /></div>
+              <p style={{ fontSize:13, color:"#64748b", margin:"4px 0" }}>{f.description}</p>
+              {f.file_path && <p style={{ fontSize:12, color:"#94a3b8" }}>{f.file_path}{f.line_number ? `:${f.line_number}` : ""}</p>}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <h3>Your Requests ({requests.length})</h3>
+          {requests.length === 0 ? <div style={{ background:"#fff", padding:32, borderRadius:16, textAlign:"center", color:"#94a3b8" }}><p>No code review requests yet.</p><p>Click "New Request" to submit your first code review request.</p></div> : (
+            <div style={{ display:"grid", gap:12 }}>
+              {requests.map(r => (
+                <div key={r.id} style={{ background:"#fff", padding:16, borderRadius:12, border:"1px solid #e2e8f0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div>
+                    <strong>{r.repository_name}</strong> <StatusBadge status={r.status} />
+                    <p style={{ fontSize:13, color:"#64748b", margin:"4px 0 0" }}>{r.review_type} • {r.primary_language} • Priority: {r.priority}</p>
+                  </div>
+                  {["in_review","completed"].includes(r.status) && <button type="button" onClick={() => viewFindings(r)} style={{ padding:"6px 14px", border:"1px solid #e2e8f0", borderRadius:8, background:"#fff", cursor:"pointer", fontSize:13 }}>View Findings</button>}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ─── Platform Admin View ─── */
+function AdminView({ user, onLogout }) {
+  const [requests, setRequests] = useState([]);
+  const [assignEmail, setAssignEmail] = useState({});
+  const [toast, setToast] = useState("");
+
+  async function load() { try { setRequests(await api.fetchRequests()); } catch {} }
+  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, []);
+  useEffect(() => { if (toast) { const t = setTimeout(() => setToast(""), 3000); return () => clearTimeout(t); } }, [toast]);
+
+  const counts = { pending:0, approved:0, in_review:0, completed:0, rejected:0 };
+  requests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+
+  async function decide(id, action) { try { await api.decideRequest(id, action); setToast(`Request ${action}d`); load(); } catch (err) { setToast(err.message); } }
+  async function assign(id) {
+    const email = assignEmail[id];
+    if (!email) { setToast("Enter researcher email"); return; }
+    try { await api.assignRequest(id, email); setToast("Researcher assigned"); setAssignEmail({...assignEmail, [id]:""}); load(); } catch (err) { setToast(err.message); }
+  }
+
+  return (
+    <div className="page-shell" style={{ maxWidth:1100, margin:"0 auto", padding:"2rem 1.5rem" }}>
+      <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
+        <div><h1 style={{ fontSize:22, margin:0 }}>Code Security — Platform Admin</h1><p style={{ color:"#64748b", margin:"4px 0 0", fontSize:14 }}>{user.email}</p></div>
+        <a href={LOGOUT_URL} style={{ padding:"8px 16px", border:"1px solid #e2e8f0", borderRadius:12, textDecoration:"none", color:"#64748b", fontSize:13 }}>Logout</a>
+      </header>
+      {toast && <div style={{ padding:"10px 16px", background:"#ecfdf5", border:"1px solid #6ee7b7", borderRadius:12, marginBottom:16, fontSize:13 }}>{toast}</div>}
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:24 }}>
+        {Object.entries(counts).map(([k,v]) => <div key={k} style={{ background:"#fff", padding:16, borderRadius:12, border:"1px solid #e2e8f0", textAlign:"center" }}><div style={{ fontSize:24, fontWeight:700 }}>{v}</div><div style={{ fontSize:12, color:"#64748b", textTransform:"capitalize" }}>{k.replace("_"," ")}</div></div>)}
+      </div>
+
+      <h3>All Requests ({requests.length})</h3>
+      {requests.length === 0 ? <div style={{ background:"#fff", padding:32, borderRadius:16, textAlign:"center", color:"#94a3b8" }}><p>No code review requests have been submitted yet.</p><p>Organizations will submit requests through their workspace.</p></div> : (
+        <div style={{ display:"grid", gap:12 }}>
+          {requests.map(r => (
+            <div key={r.id} style={{ background:"#fff", padding:16, borderRadius:12, border:"1px solid #e2e8f0" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                <div><strong>{r.repository_name}</strong> <StatusBadge status={r.status} /> <span style={{ fontSize:12, color:"#94a3b8", marginLeft:8 }}>#{r.id}</span></div>
+                <span style={{ fontSize:12, color:"#94a3b8" }}>{r.organization_email}</span>
+              </div>
+              <p style={{ fontSize:13, color:"#64748b", margin:"0 0 8px" }}>{r.review_type} • {r.primary_language} • Priority: {r.priority}</p>
+              <p style={{ fontSize:13, margin:"0 0 8px" }}>{r.description}</p>
+              {r.assigned_to && <p style={{ fontSize:12, color:"#3b82f6" }}>Assigned to: {r.assigned_to}</p>}
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {r.status === "pending" && <>
+                  <button type="button" onClick={() => decide(r.id, "approve")} style={{ padding:"6px 14px", background:"#10b981", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontSize:13 }}>Approve</button>
+                  <button type="button" onClick={() => decide(r.id, "reject")} style={{ padding:"6px 14px", background:"#ef4444", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontSize:13 }}>Reject</button>
+                </>}
+                {(r.status === "approved" || r.status === "in_review") && <>
+                  <input placeholder="Researcher email" value={assignEmail[r.id] || ""} onChange={e => setAssignEmail({...assignEmail, [r.id]:e.target.value})} style={{ padding:"6px 10px", border:"1px solid #e2e8f0", borderRadius:8, fontSize:13, width:220 }} />
+                  <button type="button" onClick={() => assign(r.id)} style={{ padding:"6px 14px", background:"#3b82f6", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontSize:13 }}>Assign</button>
+                </>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Internal Researcher View ─── */
+function ReviewerView({ user, onLogout }) {
+  const [requests, setRequests] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [selectedReq, setSelectedReq] = useState(null);
+  const [findings, setFindings] = useState([]);
+  const [showFindingForm, setShowFindingForm] = useState(false);
+  const [draft, setDraft] = useState({ title:"", description:"", file_path:"", line_number:0, severity:"medium", category:"Other" });
+  const [toast, setToast] = useState("");
+
+  async function load() {
+    try { setRequests(await api.fetchRequests()); } catch {}
+    try { const d = await api.fetchDashboard(); setNotifications(d.notifications || []); } catch {}
+  }
+  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, []);
+  useEffect(() => { if (toast) { const t = setTimeout(() => setToast(""), 3000); return () => clearTimeout(t); } }, [toast]);
+
+  async function selectReq(r) { setSelectedReq(r); setShowFindingForm(false); try { setFindings(await api.fetchFindings(r.id)); } catch { setFindings([]); } }
+  async function submitFinding(e) {
+    e.preventDefault();
+    try { await api.submitFinding(selectedReq.id, draft); setToast("Finding submitted!"); setShowFindingForm(false); setDraft({ title:"", description:"", file_path:"", line_number:0, severity:"medium", category:"Other" }); setFindings(await api.fetchFindings(selectedReq.id)); } catch (err) { setToast(err.message); }
+  }
+
+  return (
+    <div className="page-shell" style={{ maxWidth:1100, margin:"0 auto", padding:"2rem 1.5rem" }}>
+      <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
+        <div><h1 style={{ fontSize:22, margin:0 }}>Code Security — Reviewer</h1><p style={{ color:"#64748b", margin:"4px 0 0", fontSize:14 }}>{user.email}</p></div>
+        <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+          <NotifBell notifications={notifications} onRead={async id => { await api.markNotificationRead(id); load(); }} />
+          <a href={LOGOUT_URL} style={{ padding:"8px 16px", border:"1px solid #e2e8f0", borderRadius:12, textDecoration:"none", color:"#64748b", fontSize:13 }}>Logout</a>
+        </div>
+      </header>
+      {toast && <div style={{ padding:"10px 16px", background:"#ecfdf5", border:"1px solid #6ee7b7", borderRadius:12, marginBottom:16, fontSize:13 }}>{toast}</div>}
+
+      {selectedReq ? (
+        <div style={{ background:"#fff", padding:24, borderRadius:16, border:"1px solid #e2e8f0" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+            <h3 style={{ margin:0 }}>{selectedReq.repository_name} <StatusBadge status={selectedReq.status} /></h3>
+            <div style={{ display:"flex", gap:8 }}>
+              <button type="button" onClick={() => setShowFindingForm(!showFindingForm)} style={{ padding:"6px 14px", background:"#c8102e", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontSize:13 }}>{showFindingForm ? "Cancel" : "Add Finding"}</button>
+              <button type="button" onClick={() => setSelectedReq(null)} style={{ padding:"6px 12px", border:"1px solid #e2e8f0", borderRadius:8, background:"#fff", cursor:"pointer", fontSize:13 }}>Back</button>
+            </div>
+          </div>
+          <p style={{ fontSize:13, color:"#64748b" }}>{selectedReq.review_type} • {selectedReq.primary_language} • Priority: {selectedReq.priority}</p>
+          <p style={{ fontSize:14, margin:"8px 0 16px" }}>{selectedReq.description}</p>
+
+          {showFindingForm && (
+            <form onSubmit={submitFinding} style={{ border:"1px solid #e2e8f0", padding:16, borderRadius:12, marginBottom:16, display:"grid", gap:10 }}>
+              <input className="input-base" placeholder="Finding title *" value={draft.title} onChange={e => setDraft({...draft, title:e.target.value})} required />
+              <textarea className="input-base" placeholder="Description *" rows={3} value={draft.description} onChange={e => setDraft({...draft, description:e.target.value})} required />
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                <input className="input-base" placeholder="File path" value={draft.file_path} onChange={e => setDraft({...draft, file_path:e.target.value})} />
+                <input className="input-base" type="number" placeholder="Line number" value={draft.line_number || ""} onChange={e => setDraft({...draft, line_number:parseInt(e.target.value)||0})} />
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                <select className="input-base" value={draft.severity} onChange={e => setDraft({...draft, severity:e.target.value})}><option value="info">Info</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
+                <select className="input-base" value={draft.category} onChange={e => setDraft({...draft, category:e.target.value})}><option>Injection</option><option>XSS</option><option>Authentication</option><option>Authorization</option><option>Cryptography</option><option>Configuration</option><option>Information Disclosure</option><option>Other</option></select>
+              </div>
+              <button type="submit" style={{ padding:"10px 0", background:"#c8102e", color:"#fff", border:"none", borderRadius:12, fontWeight:600, cursor:"pointer" }}>Submit Finding</button>
+            </form>
+          )}
+
+          <h4>Findings ({findings.length})</h4>
+          {findings.length === 0 ? <p style={{ color:"#94a3b8" }}>No findings submitted yet.</p> : findings.map(f => (
+            <div key={f.id} style={{ padding:12, borderBottom:"1px solid #f1f5f9" }}>
+              <div style={{ display:"flex", justifyContent:"space-between" }}><strong>{f.title}</strong><SeverityBadge severity={f.severity} /></div>
+              <p style={{ fontSize:13, color:"#64748b", margin:"4px 0" }}>{f.description}</p>
+              {f.file_path && <p style={{ fontSize:12, color:"#94a3b8" }}>{f.file_path}{f.line_number ? `:${f.line_number}` : ""}</p>}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <h3>Assigned Requests ({requests.length})</h3>
+          {requests.length === 0 ? <div style={{ background:"#fff", padding:32, borderRadius:16, textAlign:"center", color:"#94a3b8" }}><p>No code review requests have been assigned to you yet.</p><p>The platform admin will assign requests to you when they are ready for review.</p></div> : (
+            <div style={{ display:"grid", gap:12 }}>
+              {requests.map(r => (
+                <div key={r.id} onClick={() => selectReq(r)} style={{ background:"#fff", padding:16, borderRadius:12, border:"1px solid #e2e8f0", cursor:"pointer", transition:"box-shadow .2s" }} onMouseOver={e => e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.08)"} onMouseOut={e => e.currentTarget.style.boxShadow="none"}>
+                  <strong>{r.repository_name}</strong> <StatusBadge status={r.status} />
+                  <p style={{ fontSize:13, color:"#64748b", margin:"4px 0 0" }}>{r.review_type} • {r.primary_language} • Priority: {r.priority}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ─── App Root ─── */
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.fetchWhoAmI().then(data => setUser(data)).catch(() => setUser(null)).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh" }}><p>Loading...</p></div>;
+  if (!user || !user.authenticated) return <UnauthView reason="unauthenticated" />;
+  if (user.role === "user") return <UnauthView reason="internal" />;
+
+  switch (user.role) {
+    case "org_admin": return <OrgAdminView user={user} />;
+    case "platform_admin": return <AdminView user={user} />;
+    case "reviewer": return <ReviewerView user={user} />;
+    default: return <UnauthView reason="external" />;
+  }
+}

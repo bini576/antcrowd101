@@ -1,0 +1,497 @@
+# =============================================================================
+# AntCrowd Platform — Full Development Stack
+# =============================================================================
+
+x-platform-cors: &platform_cors "http://localhost:3000,http://localhost:5173,http://localhost:5179,http://localhost:8089,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5179,http://127.0.0.1:8089"
+x-auth-session-env: &auth_session_env
+  AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+  AUTH_INTERNAL_SERVICE_TOKEN: antcrowd-internal-dev-token
+  AUTH_SESSION_COOKIE_NAME: antcrowd_session
+  PLATFORM_LOGIN_URL: http://localhost:3000/login
+  PLATFORM_LOGOUT_URL: http://localhost:3000/api/auth/logout
+
+networks:
+  antcrowd:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: antcrowd-postgres
+    restart: unless-stopped
+    ports:
+      - "5545:5432"
+    environment:
+      POSTGRES_USER: antcrowd
+      POSTGRES_PASSWORD: antcrowd_dev
+      POSTGRES_DB: antcrowd
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/10-init-multiple-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U antcrowd -d antcrowd"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - antcrowd
+
+  minio:
+    image: coollabsio/minio:latest
+    container_name: antcrowd-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - antcrowd
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: antcrowd-auth
+    restart: unless-stopped
+    env_file:
+      - ./services/auth-service/.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DATABASE_URL: postgresql://antcrowd:antcrowd_dev@postgres:5432/auth_db
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      TWO_FACTOR_ENCRYPTION_SECRET: dev-2fa-secret-change-in-production
+      INTERNAL_SERVICE_TOKEN: antcrowd-internal-dev-token
+      COOKIE_SECURE: "false"
+      COOKIE_SAME_SITE: lax
+      CORS_ORIGINS: *platform_cors
+      FRONTEND_BASE_URL: http://localhost:3000
+      PUBLIC_AUTH_BASE_URL: http://localhost:3000/api/auth
+      EMAIL_PROVIDER: brevo
+      SMTP_HOST: smtp-relay.brevo.com
+      SMTP_PORT: 587
+      SMTP_SECURE: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  vdp-service:
+    build:
+      context: ./services/vdp-service
+    container_name: antcrowd-vdp
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth_session_env
+      APP_ENV: development
+      PORT: 8001
+      DB_DSN: postgres://antcrowd:antcrowd_dev@postgres:5432/vdp?sslmode=disable
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      MIGRATE_ON_START: "true"
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MINIO_BUCKET: vdp
+      MINIO_USE_SSL: "false"
+      CORS_ORIGIN: http://localhost:3000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8001/ready >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  pen-service:
+    build:
+      context: ./services/pen-service/backend
+    container_name: antcrowd-pen
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth_session_env
+      DB_DSN: postgres://antcrowd:antcrowd_dev@postgres:5432/pen_db?sslmode=disable
+      PORT: 8002
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      CORS_ALLOW_ORIGINS: *platform_cors
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8002/ready >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  bug-bounty-service:
+    build:
+      context: ./services/bug-bounty-service
+    container_name: antcrowd-bug-bounty
+    restart: unless-stopped
+    ports:
+      - "8003:8005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth_session_env
+      APP_PORT: 8005
+      DATABASE_URL: postgresql://antcrowd:antcrowd_dev@postgres:5432/bug_bounty_db
+      CORS_ORIGINS: *platform_cors
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8005/ready', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  ai-redteam-service:
+    build:
+      context: ./services/ai-redteam-service
+    container_name: antcrowd-ai-redteam
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth_session_env
+      APP_PORT: 8004
+      DATABASE_URL: postgresql://antcrowd:antcrowd_dev@postgres:5432/ai_redteam_db
+      CORS_ORIGINS: *platform_cors
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8004/ready', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  challenge-service:
+    build:
+      context: ./services/challenge-service
+    container_name: antcrowd-challenge
+    restart: unless-stopped
+    ports:
+      - "8005:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth_session_env
+      APP_PORT: 8003
+      DATABASE_URL: postgresql://antcrowd:antcrowd_dev@postgres:5432/challenge_db
+      CORS_ORIGINS: *platform_cors
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/ready', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  training-service:
+    build:
+      context: ./services/training-service/backend
+    container_name: antcrowd-training
+    restart: unless-stopped
+    ports:
+      - "8006:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg2://antcrowd:antcrowd_dev@postgres:5432/training_service
+      JWT_SECRET_KEY: dev-jwt-secret-change-in-production
+      INITIAL_ADMIN_PASSWORD: AntCrowd2025!Demo
+      CORS_ORIGINS: *platform_cors
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: antcrowd-internal-dev-token
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    networks:
+      - antcrowd
+
+  code-service:
+    build:
+      context: ./services/code-service
+    container_name: antcrowd-code
+    restart: unless-stopped
+    ports:
+      - "8007:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth_session_env
+      ADDR: ":8080"
+      DATABASE_URL: postgres://antcrowd:antcrowd_dev@postgres:5432/code_db?sslmode=disable
+      CORS_ORIGIN: *platform_cors
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ready > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  code-service-frontend:
+    build:
+      context: ./services/code-service/frontend
+    container_name: antcrowd-code-frontend
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    depends_on:
+      code-service:
+        condition: service_healthy
+    environment:
+      VITE_CODE_API_BASE: /api/code
+      VITE_MAIN_APP_URL: http://localhost:3000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3003/workspace/code/ > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - antcrowd
+
+  security-trust:
+    build:
+      context: ./services/securityTrust
+    container_name: antcrowd-security-trust
+    restart: unless-stopped
+    ports:
+      - "8008:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth_session_env
+      DATABASE_URL: postgresql+psycopg2://antcrowd:antcrowd_dev@postgres:5432/security_trust_db
+      CORS_ORIGINS: *platform_cors
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  trust-center:
+    build:
+      context: ./services/trustCenter
+    container_name: antcrowd-trust-center
+    restart: unless-stopped
+    ports:
+      - "8009:8009"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      PORT: 8009
+      DATABASE_URL: postgres://antcrowd:antcrowd_dev@postgres:5432/trust_center_db?sslmode=disable
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: antcrowd-internal-dev-token
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8009/ready >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  grc-service:
+    build:
+      context: ./services/GRC-service
+    container_name: antcrowd-grc
+    restart: unless-stopped
+    ports:
+      - "8010:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://antcrowd:antcrowd_dev@postgres:5432/grc_db
+      SECRET_KEY: dev-grc-secret-change-in-production
+      CORS_ORIGINS: *platform_cors
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: antcrowd-internal-dev-token
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  admin-frontend:
+    build:
+      context: ./services/admin-service/frontend
+    container_name: antcrowd-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "8089:5179"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      pen-service:
+        condition: service_healthy
+      bug-bounty-service:
+        condition: service_healthy
+      ai-redteam-service:
+        condition: service_healthy
+      challenge-service:
+        condition: service_healthy
+      code-service:
+        condition: service_healthy
+      code-service-frontend:
+        condition: service_healthy
+      security-trust:
+        condition: service_healthy
+    environment:
+      VITE_AUTH_PROXY_TARGET: http://auth-service:8080
+      VITE_PEN_PROXY_TARGET: http://pen-service:8002
+      VITE_VDP_PROXY_TARGET: http://vdp-service:8001
+      VITE_TRAINING_PROXY_TARGET: http://training-service:8000
+      VITE_BUG_BOUNTY_PROXY_TARGET: http://bug-bounty-service:8005
+      VITE_AI_REDTEAM_PROXY_TARGET: http://ai-redteam-service:8004
+      VITE_CHALLENGE_PROXY_TARGET: http://challenge-service:8003
+      VITE_CODE_PROXY_TARGET: http://code-service:8080
+      VITE_CODE_FRONTEND_PROXY_TARGET: http://code-service-frontend:3003
+      VITE_SECURITY_TRUST_PROXY_TARGET: http://security-trust:8000
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5179/admin/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - antcrowd
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: antcrowd-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:5173"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      pen-service:
+        condition: service_healthy
+      vdp-service:
+        condition: service_healthy
+      bug-bounty-service:
+        condition: service_healthy
+      ai-redteam-service:
+        condition: service_healthy
+      challenge-service:
+        condition: service_healthy
+      training-service:
+        condition: service_healthy
+      code-service:
+        condition: service_healthy
+      code-service-frontend:
+        condition: service_healthy
+      security-trust:
+        condition: service_healthy
+      trust-center:
+        condition: service_healthy
+      grc-service:
+        condition: service_healthy
+    environment:
+      VITE_AUTH_PROXY_TARGET: http://auth-service:8080
+      VITE_PEN_PROXY_TARGET: http://pen-service:8002
+      VITE_VDP_PROXY_TARGET: http://vdp-service:8001
+      VITE_TRAINING_PROXY_TARGET: http://training-service:8000
+      VITE_BUG_BOUNTY_PROXY_TARGET: http://bug-bounty-service:8005
+      VITE_AI_REDTEAM_PROXY_TARGET: http://ai-redteam-service:8004
+      VITE_CHALLENGE_PROXY_TARGET: http://challenge-service:8003
+      VITE_CODE_PROXY_TARGET: http://code-service:8080
+      VITE_CODE_FRONTEND_PROXY_TARGET: http://code-service-frontend:3003
+      VITE_SECURITY_TRUST_PROXY_TARGET: http://security-trust:8000
+      VITE_TRUST_CENTER_PROXY_TARGET: http://trust-center:8009
+      VITE_GRC_PROXY_TARGET: http://grc-service:8000
+      VITE_GRC_PORTAL_URL: http://localhost:8010
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - antcrowd

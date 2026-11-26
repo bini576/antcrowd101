@@ -1,0 +1,10 @@
+:root {
+  --ant-bg-primary: #0f172a;
+  --ant-bg-secondary: #1e293b;
+  --ant-bg-tertiary: #334155;
+  --ant-accent: #f59e0b;
+  --ant-text-primary: #f1f5f9;
+  --ant-text-secondary: #94a3b8;
+  --ant-border-subtle: rgba(148, 163, 184, 0.16);
+  --ant-shadow-md: 0 24px 80px rgba(2, 6, 23, 0.42);
+}

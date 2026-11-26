@@ -1,0 +1,91 @@
+name: Training Service CI
+
+on:
+  push:
+    paths:
+      - "services/training-service/**"
+      - ".github/workflows/training-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/training-service/**"
+      - ".github/workflows/training-service-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  backend-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/training-service/backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: services/training-service/backend/requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Compile Python modules
+        run: python -m py_compile $(find app -name "*.py")
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Import app
+        run: python -c "from app.main import app; print(app.title)"
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - frontend-organization
+          - frontend-researcher
+    defaults:
+      run:
+        working-directory: services/training-service/${{ matrix.app }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: services/training-service/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: services/training-service/backend
+            dockerfile: services/training-service/backend/Dockerfile
+          - name: frontend-organization
+            context: services/training-service
+            dockerfile: services/training-service/frontend-organization/Dockerfile
+          - name: frontend-researcher
+            context: services/training-service
+            dockerfile: services/training-service/frontend-researcher/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f "${{ matrix.dockerfile }}" "${{ matrix.context }}"

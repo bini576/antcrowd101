@@ -1,15 +1,4 @@
 services:
-  auth-service:
-    build: ../services/auth-service
-    ports:
-      - "8082:8080"
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: antcrowd
-      DB_USER: antcrowd
-      DB_PASSWORD: antcrowd123
-
   postgres:
     image: postgres:15
     environment:
@@ -17,44 +6,822 @@ services:
       POSTGRES_USER: antcrowd
       POSTGRES_PASSWORD: antcrowd123
     ports:
-      - "5432:5432"
-
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-
+    - 5544:5432
+    volumes:
+    - postgres-data:/var/lib/postgresql/data
+    - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U antcrowd -d antcrowd
+      interval: 5s
+      timeout: 5s
+      retries: 12
   minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
+    image: coollabsio/minio:latest
+    command: server /data --console-address ":9101"
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
     ports:
-      - "9000:9000"
-      - "9001:9001"
-
-  dvwa:
-    image: vulnerables/web-dvwa
+    - 9100:9000
+    - 9101:9101
+  mailpit:
+    image: axllent/mailpit
     ports:
-      - "8081:80"
-  migrate-auth:
-   image: migrate/migrate
-   volumes:
-     - ../services/auth-service/migrations:/migrations
-   command: >
-     -path=/migrations
-     -database postgres://antcrowd:antcrowd123@postgres:5432/antcrowd?sslmode=disable
-     up
-   depends_on:
-     - postgres
-
-  trust-service:
-    build: ../services/trust-service
-    container_name: trust-service
+    - 1125:1025
+    - 8125:8025
+  seed-vdp:
+    image: postgres:15
+    profiles:
+    - seed
+    volumes:
+    - ./seed-vdp.sql:/seed/seed-vdp.sql:ro
+    entrypoint:
+    - psql
+    command:
+    - -h
+    - postgres
+    - -U
+    - antcrowd
+    - -d
+    - vdp
+    - -f
+    - /seed/seed-vdp.sql
     environment:
-      DATABASE_URL: postgresql://antcrowd:antcrowd123@postgres:5432/antcrowd
-    ports:
-      - "8000:8000"
+      PGPASSWORD: antcrowd123
     depends_on:
-      - postgres
+    - postgres
+  vdp-service:
+    build: ../services/vdp-service
+    ports:
+    - 8103:8082
+    environment:
+      APP_ENV: development
+      DB_DSN: postgres://antcrowd:antcrowd123@postgres:5432/vdp?sslmode=disable
+      JWT_SECRET: dev-secret
+      MIGRATE_ON_START: 'true'
+      RATE_LIMIT_RPM: 30
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MINIO_BUCKET: vdp
+      MINIO_USE_SSL: 'false'
+      SMTP_HOST: ${VDP_SMTP_HOST:-mailpit}
+      SMTP_PORT: ${VDP_SMTP_PORT:-1025}
+      SMTP_USER: ${VDP_SMTP_USER}
+      SMTP_PASS: ${VDP_SMTP_PASS}
+      FROM_EMAIL: ${VDP_FROM_EMAIL:-noreply@antcrowd.local}
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      mailpit:
+        condition: service_started
+      ensure-service-databases:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:8082/ready >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+  vdp-frontend-public:
+    build: ../services/vdp-service/frontend-public
+    ports:
+    - 5284:80
+    depends_on:
+      vdp-service:
+        condition: service_healthy
+  vdp-org-admin-frontend:
+    build: ../services/vdp-service/frontend-admin
+    ports:
+    - 5285:80
+    depends_on:
+      vdp-service:
+        condition: service_healthy
+  pen-service-frontend:
+    build:
+      context: ../services/pen-service
+      dockerfile: frontend/Dockerfile
+    container_name: pen-service-frontend
+    ports:
+    - 5276:80
+    depends_on:
+      pen-service-backend:
+        condition: service_healthy
+    environment:
+      VITE_API_BASE_URL: /api/pen
+      VITE_PLATFORM_ADMIN_PORTAL_URL: /admin/
+      VITE_INTERNAL_RESEARCHER_PORTAL_URL: /workspace/pen/internal/
+      VITE_EXTERNAL_RESEARCHER_PORTAL_URL: /workspace/pen/external/
+  pen-service-backend:
+    build: ../services/pen-service/backend
+    container_name: pen-service-backend
+    environment:
+      DB_DSN: postgres://antcrowd:antcrowd123@postgres:5432/antcrowd?sslmode=disable
+      PORT: 8086
+      APP_ENV: development
+      JWT_SECRET: dev-secret
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    ports:
+    - 8106:8086
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:8086/ready >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  pen-researcher-backend:
+    build: ../services/pen-service/researcher-backend
+    container_name: pen-researcher-backend
+    environment:
+      DB_DSN: postgres://antcrowd:antcrowd123@postgres:5432/antcrowd?sslmode=disable
+      PORT: 8087
+      APP_ENV: development
+      JWT_SECRET: dev-secret
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    ports:
+    - 8107:8087
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pen-service-backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:8087/ready >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  pen-researcher-frontend:
+    build:
+      context: ../services/pen-service
+      dockerfile: researcher-frontend/Dockerfile
+    container_name: pen-researcher-frontend
+    ports:
+    - 5277:80
+    depends_on:
+      pen-researcher-backend:
+        condition: service_healthy
+    environment:
+      VITE_RESEARCHER_API_BASE: /api/pen-researcher
+      VITE_EXPECTED_RESEARCHER_ROLE: researcher_internal
+      VITE_PORTAL_LABEL: Internal
+      VITE_LOGIN_HINT: Use internal1@antcrowd.local / Antcrowd123!
+      VITE_TOKEN_STORAGE_KEY: antcrowd_internal_researcher_token
+  pen-external-researcher-frontend:
+    build:
+      context: ../services/pen-service
+      dockerfile: external-researcher-frontend/Dockerfile
+    container_name: pen-external-researcher-frontend
+    ports:
+    - 5278:80
+    depends_on:
+      pen-researcher-backend:
+        condition: service_healthy
+    environment:
+      VITE_RESEARCHER_API_BASE: /api/pen-researcher
+      VITE_EXPECTED_RESEARCHER_ROLE: researcher_external
+      VITE_PORTAL_LABEL: External
+      VITE_LOGIN_HINT: Use alpha@crowd.local / Antcrowd123!
+      VITE_TOKEN_STORAGE_KEY: antcrowd_external_researcher_token
+  admin-service-frontend:
+    build:
+      context: ../services/admin-service
+      dockerfile: Dockerfile
+    container_name: admin-service-frontend
+    environment:
+      VITE_API_BASE_URL: /api/pen
+      VITE_AUTH_API_BASE_URL: /api/auth
+      VITE_VDP_API_BASE_URL: /api/vdp
+      VITE_TRAINING_API_BASE_URL: /api/training
+      VITE_BUG_BOUNTY_API_BASE_URL: /api/bug-bounty
+      VITE_AI_REDTEAM_API_BASE_URL: /api/ai-redteam
+      VITE_CHALLENGE_API_BASE_URL: /api/challenge
+      VITE_CODE_API_BASE_URL: /api/code
+      VITE_TRUST_API_BASE_URL: /api/security-trust
+      VITE_GRC_API_BASE_URL: /api/grc
+      VITE_PEN_PROXY_TARGET: http://pen-service-backend:8086
+      VITE_VDP_PROXY_TARGET: http://vdp-service:8082
+      VITE_TRAINING_PROXY_TARGET: http://training-service-backend:8000
+      VITE_AUTH_PROXY_TARGET: http://auth-service:8080
+      VITE_BUG_BOUNTY_PROXY_TARGET: http://traefik:8089
+      VITE_AI_REDTEAM_PROXY_TARGET: http://traefik:8089
+      VITE_CHALLENGE_PROXY_TARGET: http://traefik:8089
+      VITE_CODE_PROXY_TARGET: http://traefik:8089
+      VITE_GRC_PROXY_TARGET: http://grc-service:8000
+      VITE_BRAND_LOGO: /branding/antcrowd-logo.png
+    ports:
+    - 5286:5179
+    depends_on:
+      pen-service-backend:
+        condition: service_healthy
+      vdp-service:
+        condition: service_healthy
+      training-service-backend:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+  training-service-backend:
+    build:
+      context: ../services/training-service/backend
+    container_name: training-service-backend
+    environment:
+      DATABASE_URL: ${TRAINING_DATABASE_URL:-postgresql+psycopg2://antcrowd:antcrowd123@postgres:5432/training_service}
+      ENVIRONMENT: development
+      JWT_SECRET_KEY: ${TRAINING_JWT_SECRET_KEY:-change-me}
+      INITIAL_ADMIN_EMAIL: ${TRAINING_INITIAL_ADMIN_EMAIL:-admin@acmecorp.com}
+      INITIAL_ADMIN_PASSWORD: ${TRAINING_INITIAL_ADMIN_PASSWORD:-Admin123!}
+      CORS_ORIGINS: http://localhost:5286,http://localhost:5274,http://localhost:5275
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    ports:
+    - 8100:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ensure-service-databases:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready')"
+        >/dev/null 2>&1 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  training-organization-frontend:
+    build:
+      context: ../services/training-service
+      dockerfile: frontend-organization/Dockerfile
+    container_name: training-organization-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8100
+    ports:
+    - 5274:80
+    depends_on:
+      training-service-backend:
+        condition: service_healthy
+  training-researcher-frontend:
+    build:
+      context: ../services/training-service
+      dockerfile: frontend-researcher/Dockerfile
+    container_name: training-researcher-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8100
+    ports:
+    - 5275:80
+    depends_on:
+      training-service-backend:
+        condition: service_healthy
+  challenge-service:
+    build:
+      context: ../services/challenge-service
+      dockerfile: Dockerfile
+    container_name: challenge-service
+    environment:
+      DATABASE_URL: postgresql://antcrowd:antcrowd123@postgres:5432/challenge_db
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+      PLATFORM_LOGIN_URL: /login
+      PLATFORM_LOGOUT_URL: /api/auth/logout
+    ports:
+    - ${CHALLENGE_SERVICE_PORT:-8003}:8003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ensure-service-databases:
+        condition: service_completed_successfully
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"
+        >/dev/null 2>&1 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  ai-redteam-service:
+    build:
+      context: ../services/ai-redteam-service
+      dockerfile: Dockerfile
+    container_name: ai-redteam-service
+    environment:
+      DATABASE_URL: postgresql://antcrowd:antcrowd123@postgres:5432/ai_redteam_db
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+      PLATFORM_LOGIN_URL: /login
+      PLATFORM_LOGOUT_URL: /api/auth/logout
+    ports:
+    - ${AI_REDTEAM_SERVICE_PORT:-8004}:8004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ensure-service-databases:
+        condition: service_completed_successfully
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"
+        >/dev/null 2>&1 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  bug-bounty-service:
+    build:
+      context: ../services/bug-bounty-service
+      dockerfile: Dockerfile
+    container_name: bug-bounty-service
+    environment:
+      DATABASE_URL: postgresql://antcrowd:antcrowd123@postgres:5432/bug_bounty_db
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+      PLATFORM_LOGIN_URL: /login
+      PLATFORM_LOGOUT_URL: /api/auth/logout
+    ports:
+    - ${BUG_BOUNTY_SERVICE_PORT:-8005}:8005
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ensure-service-databases:
+        condition: service_completed_successfully
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"
+        >/dev/null 2>&1 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  challenge-frontend:
+    build:
+      context: ../services/challenge-service/frontend
+      dockerfile: Dockerfile
+    container_name: challenge-frontend
+    environment:
+      VITE_SERVICE_KEY: challenge
+      VITE_CHALLENGE_API_BASE: /api/challenge
+      VITE_AI_REDTEAM_API_BASE: /api/ai-redteam
+      VITE_BUG_BOUNTY_API_BASE: /api/bug-bounty
+      VITE_CHALLENGE_FRONTEND_URL: /workspace/challenge
+      VITE_AI_REDTEAM_FRONTEND_URL: /workspace/ai-redteam
+      VITE_BUG_BOUNTY_FRONTEND_URL: /workspace/bug-bounty
+      VITE_JUICE_SHOP_URL: http://localhost:${JUICE_SHOP_PORT:-3003}
+    ports:
+    - ${CHALLENGE_FRONTEND_PORT:-3000}:3000
+    depends_on:
+      challenge-service:
+        condition: service_healthy
+    restart: unless-stopped
+  ai-redteam-frontend:
+    build:
+      context: ../services/ai-redteam-service/frontend
+      dockerfile: Dockerfile
+    container_name: ai-redteam-frontend
+    environment:
+      VITE_SERVICE_KEY: ai-redteam
+      VITE_CHALLENGE_API_BASE: /api/challenge
+      VITE_AI_REDTEAM_API_BASE: /api/ai-redteam
+      VITE_BUG_BOUNTY_API_BASE: /api/bug-bounty
+      VITE_CHALLENGE_FRONTEND_URL: /workspace/challenge
+      VITE_AI_REDTEAM_FRONTEND_URL: /workspace/ai-redteam
+      VITE_BUG_BOUNTY_FRONTEND_URL: /workspace/bug-bounty
+    ports:
+    - ${AI_REDTEAM_FRONTEND_PORT:-3001}:3001
+    depends_on:
+      ai-redteam-service:
+        condition: service_healthy
+    restart: unless-stopped
+  bug-bounty-frontend:
+    build:
+      context: ../services/bug-bounty-service/frontend
+      dockerfile: Dockerfile
+    container_name: bug-bounty-frontend
+    environment:
+      VITE_SERVICE_KEY: bug-bounty
+      VITE_CHALLENGE_API_BASE: /api/challenge
+      VITE_AI_REDTEAM_API_BASE: /api/ai-redteam
+      VITE_BUG_BOUNTY_API_BASE: /api/bug-bounty
+      VITE_CHALLENGE_FRONTEND_URL: /workspace/challenge
+      VITE_AI_REDTEAM_FRONTEND_URL: /workspace/ai-redteam
+      VITE_BUG_BOUNTY_FRONTEND_URL: /workspace/bug-bounty
+    ports:
+    - ${BUG_BOUNTY_FRONTEND_PORT:-3002}:3002
+    depends_on:
+      bug-bounty-service:
+        condition: service_healthy
+    restart: unless-stopped
+  security-trust-service:
+    build:
+      context: ../services/securityTrust
+      dockerfile: Dockerfile
+    container_name: security-trust-service
+    environment:
+      DATABASE_URL: postgresql://antcrowd:antcrowd123@postgres:5432/trust_db
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+      PLATFORM_LOGIN_URL: /login
+      PLATFORM_LOGOUT_URL: /api/auth/logout
+    ports:
+    - ${SECURITY_TRUST_PORT:-8006}:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ensure-service-databases:
+        condition: service_completed_successfully
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+        >/dev/null 2>&1 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  trust-admin-frontend:
+    build:
+      context: ../services/securityTrust/frontend-admin
+      dockerfile: Dockerfile
+    container_name: trust-admin-frontend
+    environment:
+      VITE_TRUST_API_BASE: /api/security-trust
+      VITE_TRUST_CENTER_API_BASE: /api/trust-center
+    ports:
+    - ${TRUST_ADMIN_FRONTEND_PORT:-3004}:3004
+    depends_on:
+      security-trust-service:
+        condition: service_healthy
+    restart: unless-stopped
+  trust-org-frontend:
+    build:
+      context: ../services/securityTrust/frontend-org
+      dockerfile: Dockerfile
+    container_name: trust-org-frontend
+    environment:
+      VITE_TRUST_API_BASE: /api/security-trust
+    ports:
+    - ${TRUST_ORG_FRONTEND_PORT:-3005}:3005
+    depends_on:
+      security-trust-service:
+        condition: service_healthy
+    restart: unless-stopped
+  grc-service:
+    build:
+      context: ../services/GRC-service
+      dockerfile: Dockerfile
+    container_name: grc-service
+    environment:
+      DATABASE_URL: postgresql+psycopg2://antcrowd:antcrowd123@postgres:5432/grc_db
+      SECRET_KEY: ${GRC_SECRET_KEY:-antcrowd-grc-dev-secret}
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8089,http://localhost:5286
+    ports:
+    - ${GRC_SERVICE_PORT:-8010}:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ensure-service-databases:
+        condition: service_completed_successfully
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+        >/dev/null 2>&1 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  traefik:
+    image: traefik:v2.11
+    command:
+    - --api.insecure=true
+    - --providers.file.filename=/etc/traefik/dynamic.yml
+    - --providers.file.watch=true
+    - --entrypoints.web.address=:80
+    - --entrypoints.traefik.address=:8080
+    ports:
+    - 8089:80
+    - 8091:8080
+    volumes:
+    - ./traefik-dynamic.yml:/etc/traefik/dynamic.yml:ro
+    depends_on:
+      frontend:
+        condition: service_started
+      admin-service-frontend:
+        condition: service_started
+      trust-center:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      code-service:
+        condition: service_started
+      bug-bounty-frontend:
+        condition: service_started
+      ai-redteam-frontend:
+        condition: service_started
+      challenge-frontend:
+        condition: service_started
+      code-service-frontend:
+        condition: service_started
+      security-trust-service:
+        condition: service_started
+      trust-admin-frontend:
+        condition: service_started
+      trust-org-frontend:
+        condition: service_started
+      grc-service:
+        condition: service_started
+    restart: unless-stopped
+  frontend:
+    build: ../frontend
+    environment:
+      VITE_API_GATEWAY_PROXY_TARGET: http://traefik:80
+      VITE_AUTH_PROXY_TARGET: http://traefik:80
+      VITE_AUTH_API_BASE: /api/auth
+      VITE_AUTH_CSRF_COOKIE_NAME: antcrowd_csrf
+      VITE_CODE_SERVICE_URL: /api/code
+      VITE_TRUST_CENTER_API_BASE_URL: /api/trust-center
+      VITE_PEN_PORTAL_URL: /workspace/pen/org/
+      VITE_PEN_ORG_PORTAL_URL: /workspace/pen/org/
+      VITE_PEN_ADMIN_PORTAL_URL: /admin/
+      VITE_PEN_INTERNAL_PORTAL_URL: /workspace/pen/internal/
+      VITE_PEN_EXTERNAL_PORTAL_URL: /workspace/pen/external/
+      VITE_VDP_PORTAL_URL: /workspace/vdp/org/
+      VITE_VDP_ORG_PORTAL_URL: /workspace/vdp/org/org-admin
+      VITE_VDP_RESEARCHER_PORTAL_URL: /workspace/vdp/researcher
+      VITE_VDP_ADMIN_PORTAL_URL: /admin/vdp
+      VITE_TRAINING_PORTAL_URL: /workspace/training/org/
+      VITE_TRAINING_ORG_PORTAL_URL: /workspace/training/org/organization/training
+      VITE_TRAINING_RESEARCHER_PORTAL_URL: /workspace/training/researcher/researcher
+      VITE_TRAINING_ADMIN_PORTAL_URL: /admin/training
+      VITE_BUG_BOUNTY_PORTAL_URL: /workspace/bug-bounty/
+      VITE_CHALLENGE_PORTAL_URL: /workspace/challenge/
+      VITE_AI_REDTEAM_PORTAL_URL: /workspace/ai-redteam/
+      VITE_TRUST_CENTER_PORTAL_URL: /trust
+    depends_on:
+      auth-service:
+        condition: service_started
+      code-service:
+        condition: service_started
+      trust-center:
+        condition: service_started
+    restart: unless-stopped
+  trust-center:
+    build: ../services/trustCenter
+    container_name: trust-center-api
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://app_user:app_password@app-db:5432/antcrowd_admin?sslmode=disable
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+    depends_on:
+      app-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:8080/health >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  auth-service:
+    build: ../services/auth-service
+    container_name: auth-service
+    ports:
+    - 8092:8080
+    volumes:
+    - auth-uploads:/app/uploads
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DB_HOST: auth-db
+      DB_PORT: 5432
+      DB_NAME: auth_db
+      DB_USER: auth_user
+      DB_PASSWORD: auth_password
+      JWT_SECRET: ${AUTH_JWT_SECRET:-antcrowd-auth-dev-secret}
+      COOKIE_SECURE: 'false'
+      COOKIE_SAME_SITE: lax
+      COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
+      CSRF_COOKIE_NAME: antcrowd_csrf
+      FRONTEND_BASE_URL: http://localhost:8089
+      PUBLIC_AUTH_BASE_URL: http://localhost:8089/api/auth
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8089,http://localhost:5286
+      UPLOADS_DIR: /app/uploads
+      RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_LOGIN_MAX: ${AUTH_RATE_LIMIT_LOGIN_MAX:-25}
+      RATE_LIMIT_MUTATION_MAX: ${AUTH_RATE_LIMIT_MUTATION_MAX:-40}
+      EMAIL_VERIFICATION_MINUTES: ${AUTH_EMAIL_VERIFICATION_MINUTES:-10}
+      EMAIL_VERIFICATION_CODE_LENGTH: ${AUTH_EMAIL_VERIFICATION_CODE_LENGTH:-6}
+      EMAIL_VERIFICATION_MAX_ATTEMPTS: ${AUTH_EMAIL_VERIFICATION_MAX_ATTEMPTS:-5}
+      EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS: ${AUTH_EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS:-60}
+      EMAIL_PROVIDER: ${AUTH_EMAIL_PROVIDER:-brevo}
+      SMTP_HOST: ${AUTH_SMTP_HOST:-smtp-relay.brevo.com}
+      SMTP_PORT: ${AUTH_SMTP_PORT:-587}
+      SMTP_SECURE: ${AUTH_SMTP_SECURE:-false}
+      SMTP_USER: ${AUTH_SMTP_USER:-your-brevo-user@smtp-brevo.com}
+      SMTP_PASS: ${AUTH_SMTP_PASS:-your-brevo-smtp-key}
+      SMTP_FROM: ${AUTH_SMTP_FROM:-AntCrowd Security <noreply@antcrowd.local>}
+      MAILPIT_HOST: ${AUTH_MAILPIT_HOST:-mailpit}
+      MAILPIT_PORT: ${AUTH_MAILPIT_PORT:-1025}
+      STORAGE_PROVIDER: ${AUTH_STORAGE_PROVIDER:-minio}
+      MINIO_ENDPOINT: ${AUTH_MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${AUTH_MINIO_ACCESS_KEY:-minio}
+      MINIO_SECRET_KEY: ${AUTH_MINIO_SECRET_KEY:-minio123}
+      MINIO_BUCKET: ${AUTH_MINIO_BUCKET:-auth-verifications}
+      MINIO_USE_SSL: ${AUTH_MINIO_USE_SSL:-false}
+      INTERNAL_SERVICE_TOKEN: ${AUTH_INTERNAL_SERVICE_TOKEN:-antcrowd-internal-dev-token}
+      TWO_FACTOR_ENCRYPTION_SECRET: ${AUTH_TWO_FACTOR_ENCRYPTION_SECRET:-antcrowd-2fa-dev-secret}
+      PLATFORM_ADMIN_EMAIL: ${AUTH_PLATFORM_ADMIN_EMAIL:-platform-admin@antcrowd.local}
+      PLATFORM_ADMIN_PASSWORD: ${AUTH_PLATFORM_ADMIN_PASSWORD:-Antcrowd123!}
+      PLATFORM_ADMIN_FIRST_NAME: ${AUTH_PLATFORM_ADMIN_FIRST_NAME:-Platform}
+      PLATFORM_ADMIN_LAST_NAME: ${AUTH_PLATFORM_ADMIN_LAST_NAME:-Admin}
+      DEMO_SEED_ENABLED: ${AUTH_DEMO_SEED_ENABLED:-true}
+      EMAIL_ENABLED: 'false'
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-onboarding@resend.dev}
+      WEBAUTHN_RP_ID: localhost
+      WEBAUTHN_RP_ORIGIN: http://localhost:8089
+      WEBAUTHN_RP_NAME: AntCrowd
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      auth-redis:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:8080/ready >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  code-service:
+    build: ../services/code-service
+    container_name: code-service
+    environment:
+      ADDR: :8080
+      CORS_ORIGIN: '*'
+      DATABASE_URL: postgres://code_service:code_service_password@code-db:5432/code_service?sslmode=disable
+      AUTH_SERVICE_INTROSPECT_URL: http://auth-service:8080/session/introspect
+      AUTH_INTERNAL_SERVICE_TOKEN: antcrowd-internal-dev-token
+      AUTH_SESSION_COOKIE_NAME: antcrowd_session
+      PLATFORM_LOGIN_URL: /login
+      PLATFORM_LOGOUT_URL: /api/auth/logout
+    depends_on:
+      code-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:8080/health >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  code-service-frontend:
+    build: ../services/code-service/frontend
+    container_name: code-service-frontend
+    environment:
+      VITE_CODE_API_BASE: /api/code
+    ports:
+    - 5287:3003
+    depends_on:
+      code-service:
+        condition: service_healthy
+    restart: unless-stopped
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_password
+      POSTGRES_DB: auth_db
+    volumes:
+    - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U auth_user -d auth_db
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  code-db:
+    image: postgres:16-alpine
+    container_name: code-db
+    environment:
+      POSTGRES_USER: code_service
+      POSTGRES_PASSWORD: code_service_password
+      POSTGRES_DB: code_service
+    volumes:
+    - code-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U code_service -d code_service
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  app-db:
+    image: postgres:16-alpine
+    container_name: app-db
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_password
+      POSTGRES_DB: antcrowd_admin
+    volumes:
+    - app-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U app_user -d antcrowd_admin
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  ensure-service-databases:
+    image: postgres:15
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: antcrowd
+      POSTGRES_USER: antcrowd
+      POSTGRES_PASSWORD: antcrowd123
+    volumes:
+    - ./ensure-databases.sh:/ensure-databases.sh:ro
+    entrypoint:
+    - sh
+    - /ensure-databases.sh
+    restart: 'no'
+  juice-shop:
+    build:
+      context: ../services/challenge-service/juice-shop
+      dockerfile: Dockerfile
+    container_name: juice-shop
+    environment:
+      NODE_ENV: antcrowd
+    ports:
+    - ${JUICE_SHOP_PORT:-3003}:3000
+    volumes:
+    - ../services/challenge-service/juice-shop/antcrowd.yml:/juice-shop/config/antcrowd.yml:ro
+    - ../services/challenge-service/frontend/public/antcrowd-logo.jpg:/juice-shop/frontend/dist/frontend/assets/public/images/antcrowd-logo.jpg:ro
+    restart: unless-stopped
+  auth-redis:
+    image: redis:7-alpine
+    container_name: auth-redis
+    restart: unless-stopped
+volumes:
+  auth-uploads: null
+  postgres-data: null
+  auth-db-data: null
+  code-db-data: null
+  app-db-data: null
+  trust-db-data: null

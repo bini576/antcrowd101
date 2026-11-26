@@ -1,0 +1,491 @@
+http:
+  routers:
+    admin-root:
+      rule: "Path(`/admin`)"
+      service: noop@internal
+      entryPoints:
+        - web
+      priority: 121
+      middlewares:
+        - admin-root-slash
+
+    api-trust-center:
+      rule: "PathPrefix(`/api/trust-center`)"
+      service: trust-center
+      entryPoints:
+        - web
+      priority: 120
+
+    api-auth:
+      rule: "PathPrefix(`/api/auth`)"
+      service: auth-service
+      entryPoints:
+        - web
+      priority: 115
+      middlewares:
+        - auth-strip
+
+    api-code:
+      rule: "PathPrefix(`/api/code`)"
+      service: code-service
+      entryPoints:
+        - web
+      priority: 110
+      middlewares:
+        - code-strip
+
+    api-pen:
+      rule: "PathPrefix(`/api/pen/`)"
+      service: pen-service-backend
+      entryPoints:
+        - web
+      priority: 107
+      middlewares:
+        - pen-rewrite
+
+    api-pen-researcher:
+      rule: "PathPrefix(`/api/pen-researcher`)"
+      service: pen-researcher-backend
+      entryPoints:
+        - web
+      priority: 108
+      middlewares:
+        - pen-researcher-rewrite
+
+    api-vdp:
+      rule: "PathPrefix(`/api/vdp`)"
+      service: vdp-service
+      entryPoints:
+        - web
+      priority: 107
+
+    api-bug-bounty:
+      rule: "PathPrefix(`/api/bug-bounty`)"
+      service: bug-bounty-service
+      entryPoints:
+        - web
+      priority: 109
+      middlewares:
+        - bug-bounty-strip
+
+    api-ai-redteam:
+      rule: "PathPrefix(`/api/ai-redteam`)"
+      service: ai-redteam-service
+      entryPoints:
+        - web
+      priority: 108
+      middlewares:
+        - ai-redteam-strip
+
+    api-challenge:
+      rule: "PathPrefix(`/api/challenge`)"
+      service: challenge-service
+      entryPoints:
+        - web
+      priority: 107
+      middlewares:
+        - challenge-strip
+
+    api-grc:
+      rule: "PathPrefix(`/api/grc`)"
+      service: grc-service
+      entryPoints:
+        - web
+      priority: 111
+      middlewares:
+        - grc-strip
+
+    api-security-trust:
+      rule: "PathPrefix(`/api/security-trust`)"
+      service: security-trust-service
+      entryPoints:
+        - web
+      priority: 106
+      middlewares:
+        - security-trust-strip
+
+    api-training:
+      rule: "PathPrefix(`/api/training`)"
+      service: training-service-backend
+      entryPoints:
+        - web
+      priority: 106
+      middlewares:
+        - training-strip
+
+    pen-org-workspace:
+      rule: "PathPrefix(`/workspace/pen/org`)"
+      service: pen-service-frontend
+      entryPoints:
+        - web
+      priority: 101
+      middlewares:
+        - pen-org-strip
+
+    pen-internal-workspace:
+      rule: "PathPrefix(`/workspace/pen/internal`)"
+      service: pen-researcher-frontend
+      entryPoints:
+        - web
+      priority: 100
+      middlewares:
+        - pen-internal-strip
+
+    pen-external-workspace:
+      rule: "PathPrefix(`/workspace/pen/external`)"
+      service: pen-external-researcher-frontend
+      entryPoints:
+        - web
+      priority: 99
+      middlewares:
+        - pen-external-strip
+
+    training-org-workspace:
+      rule: "PathPrefix(`/workspace/training/org`)"
+      service: training-organization-frontend
+      entryPoints:
+        - web
+      priority: 98
+      middlewares:
+        - training-org-strip
+
+    training-researcher-workspace:
+      rule: "PathPrefix(`/workspace/training/researcher`)"
+      service: training-researcher-frontend
+      entryPoints:
+        - web
+      priority: 97
+      middlewares:
+        - training-researcher-strip
+
+    vdp-org-workspace:
+      rule: "PathPrefix(`/workspace/vdp/org`)"
+      service: vdp-org-admin-frontend
+      entryPoints:
+        - web
+      priority: 96
+      middlewares:
+        - vdp-org-strip
+
+    vdp-researcher-workspace:
+      rule: "PathPrefix(`/workspace/vdp/researcher`)"
+      service: vdp-frontend-public
+      entryPoints:
+        - web
+      priority: 95
+      middlewares:
+        - vdp-researcher-strip
+
+    bug-bounty-workspace:
+      rule: "PathPrefix(`/workspace/bug-bounty`)"
+      service: bug-bounty-frontend
+      entryPoints:
+        - web
+      priority: 93
+
+    ai-redteam-workspace:
+      rule: "PathPrefix(`/workspace/ai-redteam`)"
+      service: ai-redteam-frontend
+      entryPoints:
+        - web
+      priority: 92
+
+    challenge-workspace:
+      rule: "PathPrefix(`/workspace/challenge`)"
+      service: challenge-frontend
+      entryPoints:
+        - web
+      priority: 91
+
+    code-workspace:
+      rule: "PathPrefix(`/workspace/code`)"
+      service: code-service-frontend
+      entryPoints:
+        - web
+      priority: 90
+
+    trust-admin-workspace:
+      rule: "PathPrefix(`/workspace/trust-admin`)"
+      service: trust-admin-frontend
+      entryPoints:
+        - web
+      priority: 89
+
+    trust-org-workspace:
+      rule: "PathPrefix(`/workspace/trust-org`)"
+      service: trust-org-frontend
+      entryPoints:
+        - web
+      priority: 88
+
+    admin:
+      rule: "PathPrefix(`/admin`)"
+      service: admin-service-frontend
+      entryPoints:
+        - web
+      priority: 50
+
+    frontend:
+      rule: "PathPrefix(`/`)"
+      service: frontend
+      entryPoints:
+        - web
+      priority: 1
+
+  services:
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:5173"
+
+    admin-service-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://admin-service-frontend:5179"
+
+    trust-center:
+      loadBalancer:
+        servers:
+          - url: "http://trust-center:8080"
+
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth-service:8080"
+
+    code-service:
+      loadBalancer:
+        servers:
+          - url: "http://code-service:8080"
+
+    pen-service-backend:
+      loadBalancer:
+        servers:
+          - url: "http://pen-service-backend:8086"
+
+    pen-researcher-backend:
+      loadBalancer:
+        servers:
+          - url: "http://pen-researcher-backend:8087"
+
+    pen-service-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://pen-service-frontend:80"
+
+    pen-researcher-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://pen-researcher-frontend:80"
+
+    pen-external-researcher-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://pen-external-researcher-frontend:80"
+
+    vdp-service:
+      loadBalancer:
+        servers:
+          - url: "http://vdp-service:8082"
+
+    vdp-org-admin-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://vdp-org-admin-frontend:80"
+
+    vdp-frontend-public:
+      loadBalancer:
+        servers:
+          - url: "http://vdp-frontend-public:80"
+
+    training-service-backend:
+      loadBalancer:
+        servers:
+          - url: "http://training-service-backend:8000"
+
+    training-organization-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://training-organization-frontend:80"
+
+    bug-bounty-service:
+      loadBalancer:
+        servers:
+          - url: "http://bug-bounty-service:8005"
+
+    ai-redteam-service:
+      loadBalancer:
+        servers:
+          - url: "http://ai-redteam-service:8004"
+
+    challenge-service:
+      loadBalancer:
+        servers:
+          - url: "http://challenge-service:8003"
+
+    bug-bounty-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://bug-bounty-frontend:3002"
+
+    ai-redteam-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://ai-redteam-frontend:3001"
+
+    challenge-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://challenge-frontend:3000"
+
+    code-service-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://code-service-frontend:3003"
+
+    training-researcher-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://training-researcher-frontend:80"
+
+    security-trust-service:
+      loadBalancer:
+        servers:
+          - url: "http://security-trust-service:8000"
+
+    grc-service:
+      loadBalancer:
+        servers:
+          - url: "http://grc-service:8000"
+
+    trust-admin-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://trust-admin-frontend:3004"
+
+    trust-org-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://trust-org-frontend:3005"
+
+  middlewares:
+    admin-root-slash:
+      redirectRegex:
+        regex: "^(https?://[^/]+)/admin$"
+        replacement: "${1}/admin/"
+        permanent: true
+
+    auth-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/auth"
+
+    code-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/code"
+
+    pen-rewrite:
+      replacePathRegex:
+        regex: "^/api/pen/(.*)"
+        replacement: "/$1"
+
+    pen-researcher-rewrite:
+      replacePathRegex:
+        regex: "^/api/pen-researcher/(.*)"
+        replacement: "/$1"
+
+    training-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/training"
+
+    pen-org-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/pen/org"
+
+    pen-internal-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/pen/internal"
+
+    pen-external-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/pen/external"
+
+    training-org-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/training/org"
+
+    training-researcher-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/training/researcher"
+
+    vdp-org-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/vdp/org"
+
+    vdp-researcher-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/vdp/researcher"
+
+    bug-bounty-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/bug-bounty"
+
+    ai-redteam-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/ai-redteam"
+
+    challenge-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/challenge"
+
+    bug-bounty-workspace-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/bug-bounty"
+
+    ai-redteam-workspace-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/ai-redteam"
+
+    challenge-workspace-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/challenge"
+
+    code-workspace-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/code"
+
+    security-trust-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/security-trust"
+
+    grc-strip:
+      stripPrefix:
+        prefixes:
+          - "/api/grc"
+
+    trust-admin-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/trust-admin"
+
+    trust-org-strip:
+      stripPrefix:
+        prefixes:
+          - "/workspace/trust-org"

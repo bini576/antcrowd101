@@ -1,0 +1,32 @@
+http:
+  routers:
+    trust:
+      rule: "PathPrefix(`/trust`)"
+      service: trust
+      entryPoints:
+        - web
+      priority: 2
+      middlewares:
+        - trust-strip
+    frontend:
+      rule: "PathPrefix(`/`)"
+      service: frontend
+      entryPoints:
+        - web
+      priority: 1
+
+  services:
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5173"
+    trust:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5174"
+
+  middlewares:
+    trust-strip:
+      stripPrefix:
+        prefixes:
+          - "/trust"

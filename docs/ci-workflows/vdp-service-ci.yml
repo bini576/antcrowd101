@@ -1,0 +1,84 @@
+name: VDP Service CI
+
+on:
+  push:
+    paths:
+      - "services/vdp-service/**"
+      - ".github/workflows/vdp-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/vdp-service/**"
+      - ".github/workflows/vdp-service-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/vdp-service
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+          cache-dependency-path: services/vdp-service/go.sum
+
+      - name: Run Go vet
+        run: go vet ./...
+
+      - name: Run Go tests
+        run: go test -cover ./...
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - frontend-public
+          - frontend-admin
+    defaults:
+      run:
+        working-directory: services/vdp-service/${{ matrix.app }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: services/vdp-service/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: services/vdp-service
+            dockerfile: services/vdp-service/Dockerfile
+          - name: frontend-public
+            context: services/vdp-service/frontend-public
+            dockerfile: services/vdp-service/frontend-public/Dockerfile
+          - name: frontend-admin
+            context: services/vdp-service/frontend-admin
+            dockerfile: services/vdp-service/frontend-admin/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f "${{ matrix.dockerfile }}" "${{ matrix.context }}"

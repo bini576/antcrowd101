@@ -1,0 +1,9 @@
+ALTER TABLE vdp_reports
+  ADD COLUMN IF NOT EXISTS reporter_name TEXT,
+  ADD COLUMN IF NOT EXISTS affected_asset TEXT,
+  ADD COLUMN IF NOT EXISTS vulnerability_type TEXT,
+  ADD COLUMN IF NOT EXISTS steps_to_reproduce TEXT,
+  ADD COLUMN IF NOT EXISTS impact TEXT,
+  ADD COLUMN IF NOT EXISTS attack_vector TEXT,
+  ADD COLUMN IF NOT EXISTS cwe TEXT,
+  ADD COLUMN IF NOT EXISTS reference_links TEXT;

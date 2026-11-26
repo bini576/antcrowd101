@@ -1,0 +1,13 @@
+services:
+  trust-center-form:
+    image: golang:1.21-alpine
+    container_name: trust-center-form
+    working_dir: /app
+    command: sh -c "go run trust-center-api.go"
+    environment:
+      TRUST_CENTER_API_PORT: "4001"
+    ports:
+      - "4001:4001"
+    volumes:
+      - ../frontend/server:/app
+    restart: unless-stopped

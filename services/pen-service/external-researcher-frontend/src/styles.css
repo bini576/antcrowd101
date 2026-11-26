@@ -1,0 +1,110 @@
+/* ═══════════════════════════════════════════════════════════════
+   Pen Service — Researcher Portal
+   Dark-theme overlay (extends base.css)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.hero {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 20px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(245, 158, 11, 0.08), transparent 55%),
+    var(--surface);
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f59e0b;
+}
+
+.hero-copy h1 {
+  margin: 8px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  line-height: 1.05;
+  color: #fff;
+}
+
+.hero-copy p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+.hero-photo,
+.hero-photo-internal,
+.hero-photo-external {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  min-height: 200px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.03), rgba(5, 7, 12, 0.3));
+}
+
+/* ── Quick Stats ───────────────────────────────────────────── */
+.quick-stats {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 14px;
+}
+
+.stat-card span {
+  color: #4a5568;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.3rem;
+  color: #fff;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+/* ── Identity ──────────────────────────────────────────────── */
+.identity { margin-top: 14px; }
+
+.role-pill-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.role-pill {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: transparent;
+  padding: 5px 10px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #7a8599;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .hero, .grid.two, .quick-stats, .double { grid-template-columns: 1fr; }
+}

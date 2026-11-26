@@ -1,19 +1,15 @@
-FROM golang:1.25-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy module files first for caching
-COPY go.mod go.sum ./
-RUN go mod download
+COPY package*.json ./
+RUN npm install
 
-# Copy the rest of the source code
 COPY . .
 
-# Build the whole package, not just main.go
-RUN go build -o service .
-
-# Expose port
 EXPOSE 8080
 
-# Run the binary
-CMD ["./service"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+CMD ["npm", "start"]

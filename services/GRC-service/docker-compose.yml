@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  grc-service:
+    build: .
+    container_name: grc-service
+    ports:
+      - "8010:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/grc_db
+      - SECRET_KEY=2109727c14e5bf38001739f0a1663cd25ce51fe956e06f4bbbd2f5889d1a28df
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    container_name: grc-db
+    environment:
+      POSTGRES_DB: grc_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - grc_db_data:/var/lib/postgresql/data
+
+volumes:
+  grc_db_data:

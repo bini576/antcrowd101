@@ -1,0 +1,97 @@
+name: Pen Service CI
+
+on:
+  push:
+    paths:
+      - "services/pen-service/**"
+      - ".github/workflows/pen-service-ci.yml"
+  pull_request:
+    paths:
+      - "services/pen-service/**"
+      - ".github/workflows/pen-service-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - backend
+          - researcher-backend
+    defaults:
+      run:
+        working-directory: services/pen-service/${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+          cache-dependency-path: services/pen-service/${{ matrix.service }}/go.sum
+
+      - name: Run Go vet
+        run: go vet ./...
+
+      - name: Run Go tests
+        run: go test -cover ./...
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - frontend
+          - researcher-frontend
+          - external-researcher-frontend
+    defaults:
+      run:
+        working-directory: services/pen-service/${{ matrix.app }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: services/pen-service/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: services/pen-service/backend
+            dockerfile: services/pen-service/backend/Dockerfile
+          - name: researcher-backend
+            context: services/pen-service/researcher-backend
+            dockerfile: services/pen-service/researcher-backend/Dockerfile
+          - name: frontend
+            context: services/pen-service
+            dockerfile: services/pen-service/frontend/Dockerfile
+          - name: researcher-frontend
+            context: services/pen-service
+            dockerfile: services/pen-service/researcher-frontend/Dockerfile
+          - name: external-researcher-frontend
+            context: services/pen-service
+            dockerfile: services/pen-service/external-researcher-frontend/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f "${{ matrix.dockerfile }}" "${{ matrix.context }}"

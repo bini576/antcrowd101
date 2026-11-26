@@ -1,0 +1,139 @@
+/* AntCrowd custom theme for Juice Shop */
+/* Overrides the default Material theme with AntCrowd brand colors */
+
+/* Primary color: AntCrowd Red #C8102E */
+/* Accent color: AntCrowd Gold #A67C5D */
+/* Background warm: #fffaf8 */
+
+/* Top navigation bar and Sidebar header color overrides */
+.mat-toolbar.mat-primary,
+mat-toolbar.mat-primary,
+.mat-sidenav mat-toolbar,
+.mat-sidenav .mat-toolbar,
+.mat-sidenav .sidenav-header,
+.mat-sidenav .user-profile {
+  background-color: #f59e0b !important;
+  color: #0f172a !important;
+}
+
+/* Ensure all text, buttons, and icons inside the yellow bars are dark slate */
+.mat-toolbar.mat-primary button,
+.mat-toolbar.mat-primary mat-icon,
+.mat-toolbar.mat-primary span,
+.mat-toolbar.mat-primary a,
+mat-toolbar.mat-primary button,
+mat-toolbar.mat-primary mat-icon,
+mat-toolbar.mat-primary span,
+mat-toolbar.mat-primary a,
+.mat-sidenav mat-toolbar button,
+.mat-sidenav mat-toolbar mat-icon,
+.mat-sidenav mat-toolbar span,
+.mat-sidenav .sidenav-header button,
+.mat-sidenav .sidenav-header mat-icon,
+.mat-sidenav .sidenav-header span,
+.mat-sidenav .user-profile button,
+.mat-sidenav .user-profile mat-icon,
+.mat-sidenav .user-profile span {
+  color: #0f172a !important;
+}
+
+/* Hide the unnecessary white logo box */
+.mat-toolbar img,
+img.logo,
+.logo,
+.mat-sidenav img[src*="logo"],
+.mat-sidenav .logo-placeholder {
+  display: none !important;
+}
+
+
+
+.mat-raised-button.mat-primary,
+.mat-flat-button.mat-primary,
+.mat-fab.mat-primary,
+.mat-mini-fab.mat-primary,
+button.mat-primary {
+  background-color: #C8102E !important;
+  color: #fff !important;
+}
+
+.mat-button.mat-primary,
+a.mat-primary {
+  color: #C8102E !important;
+}
+
+.mat-icon.mat-primary {
+  color: #C8102E !important;
+}
+
+.mat-progress-bar .mat-progress-bar-fill::after {
+  background-color: #C8102E !important;
+}
+
+.mat-badge-content {
+  background-color: #C8102E !important;
+  color: #fff !important;
+}
+
+/* Accent -> AntCrowd Gold */
+.mat-raised-button.mat-accent,
+.mat-flat-button.mat-accent,
+.mat-fab.mat-accent,
+.mat-mini-fab.mat-accent {
+  background-color: #A67C5D !important;
+  color: #fff !important;
+}
+
+.mat-checkbox-checked .mat-checkbox-background {
+  background-color: #C8102E !important;
+}
+
+.mat-slide-toggle.mat-checked .mat-slide-toggle-bar {
+  background-color: rgba(200, 16, 46, 0.54) !important;
+}
+
+.mat-slide-toggle.mat-checked .mat-slide-toggle-thumb {
+  background-color: #C8102E !important;
+}
+
+/* Sidenav and card backgrounds */
+.mat-sidenav {
+  background-color: #ffffff !important;
+  color: #222 !important;
+}
+
+.mat-card {
+  border-radius: 12px !important;
+}
+
+/* Links */
+a {
+  color: #C8102E !important;
+}
+
+/* Score board and challenge solved markers */
+.mat-row .mat-cell .mat-icon[style*="green"],
+.challenge-solved {
+  color: #2d6d3d !important;
+}
+
+/* Snackbar / toast */
+.mat-snack-bar-container {
+  background-color: #1a1a2e !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+}
+
+/* Tab indicators */
+.mat-tab-label-active {
+  color: #C8102E !important;
+}
+
+.mat-ink-bar {
+  background-color: #C8102E !important;
+}
+
+/* Stepper */
+.mat-step-header .mat-step-icon-selected {
+  background-color: #C8102E !important;
+}

@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  trust-center-backend:
+    build: .
+    container_name: trust-center-api
+    ports:
+      - ":8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8080"]

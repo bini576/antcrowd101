@@ -1,0 +1,29 @@
+services:
+  code-service:
+    build: .
+    container_name: code-service
+    restart: unless-stopped
+    ports:
+      - "8086:8080"
+    environment:
+      ADDR: ":8080"
+      CORS_ORIGIN: "*"
+      DATABASE_URL: postgres://code_service:code_service_password@postgres:5432/code_service?sslmode=disable
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: code-service-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - code_service_pgdata:/var/lib/postgresql/data
+
+volumes:
+  code_service_pgdata:

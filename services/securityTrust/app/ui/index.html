@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trust Center & GRC Console</title>
+  <style>
+    :root {
+      --bg: #0b0e12;
+      --panel: #11161b;
+      --ink: #e7eef5;
+      --muted: #9fb0c2;
+      --accent: #3ddc84;
+      --accent-2: #59b7ff;
+      --border: #1c242b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Space Grotesk", "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 15% -10%, rgba(61,220,132,0.15), transparent 60%),
+        radial-gradient(900px 700px at 90% 0%, rgba(89,183,255,0.15), transparent 55%),
+        var(--bg);
+    }
+    header {
+      padding: 28px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(17,22,27,0.9), rgba(17,22,27,0.4));
+      backdrop-filter: blur(6px);
+    }
+    header h1 {
+      margin: 0 0 6px 0;
+      font-size: 28px;
+      letter-spacing: -0.4px;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 800px;
+    }
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      animation: fadeIn 420ms ease-out;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 160px;
+    }
+    section h2 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+    .muted { color: var(--muted); }
+    .list { display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    input, textarea, select {
+      background: #0e1419;
+      border: 1px solid var(--border);
+      color: var(--ink);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      width: 100%;
+    }
+    button {
+      background: linear-gradient(120deg, var(--accent), #2f9b6b);
+      border: none;
+      color: #0b0e12;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button.alt {
+      background: linear-gradient(120deg, var(--accent-2), #3a7bc0);
+      color: #0b0e12;
+    }
+    form { display: grid; gap: 8px; }
+    .row { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Trust Center & GRC Console</h1>
+    <p>Connect your backend GRC data to a clean UI, seed frameworks, add evidence, run evaluations, and view live trust status.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Organization</h2>
+      <form id="orgForm">
+        <input name="org_slug" placeholder="Organization slug (e.g. acme)" required />
+        <input name="org_id" placeholder="Organization ID (UUID)" required />
+        <button type="submit">Use Org</button>
+        <div id="orgStatus" class="muted"></div>
+      </form>
+      <div class="muted" style="margin-top:8px;">
+        Trust Center page: <a id="trustLink" href="#" target="_blank" rel="noreferrer">Open</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Seed Frameworks</h2>
+      <div class="muted">Ethiopia + ISO baselines for fintech, healthcare, education, and general SaaS.</div>
+      <button id="seedFrameworks">Seed Frameworks</button>
+      <div id="seedFrameworksResult" class="muted"></div>
+    </section>
+
+    <section>
+      <h2>Seed Controls</h2>
+      <div class="muted">Creates starter controls mapped to evidence types.</div>
+      <button id="seedControls">Seed Controls</button>
+      <div id="seedControlsResult" class="muted"></div>
+    </section>
+
+    <section>
+      <h2>Add Evidence</h2>
+      <form id="evidenceForm">
+        <input name="evidence_type" placeholder="evidence_type (e.g. bcp_policy)" required />
+        <input name="value" placeholder="value (e.g. true)" />
+        <input name="source" placeholder="source (e.g. github)" />
+        <textarea name="data" placeholder="optional data"></textarea>
+        <button type="submit">Save Evidence</button>
+        <div id="evidenceResult" class="muted"></div>
+      </form>
+    </section>
+
+    <section>
+      <h2>Run Evaluation</h2>
+      <div class="muted">Evaluates all controls using latest evidence.</div>
+      <button id="runEval" class="alt">Evaluate Controls</button>
+      <div id="evalResult" class="muted"></div>
+    </section>
+
+    <section>
+      <h2>GRC Overview</h2>
+      <div id="grcSummary" class="list"></div>
+      <div id="grcFrameworks" class="list" style="margin-top:8px;"></div>
+    </section>
+
+    <section>
+      <h2>Integrations</h2>
+      <form id="integrationForm">
+        <select name="provider">
+          <option value="github">GitHub</option>
+          <option value="aws">AWS</option>
+          <option value="gcp">GCP</option>
+          <option value="okta">Okta</option>
+          <option value="google_workspace">Google Workspace</option>
+          <option value="jira">Jira</option>
+        </select>
+        <textarea name="config" placeholder="config JSON (optional)"></textarea>
+        <button type="submit">Connect Integration</button>
+        <div id="integrationResult" class="muted"></div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    let orgId = "";
+    let orgSlug = "";
+    const apiBase = "/api/v1";
+
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text || "";
+    };
+
+    const orgForm = document.getElementById("orgForm");
+    orgForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(orgForm));
+      orgId = data.org_id.trim();
+      orgSlug = data.org_slug.trim();
+      const link = document.getElementById("trustLink");
+      link.href = `${apiBase}/trust-center/${orgSlug}/page`;
+      setText("orgStatus", `Using org ${orgSlug} (${orgId})`);
+    });
+
+    document.getElementById("seedFrameworks").addEventListener("click", async () => {
+      const res = await fetch(`${apiBase}/grc/seed/ethiopia-iso`, { method: "POST" });
+      setText("seedFrameworksResult", res.ok ? "Frameworks seeded." : "Failed to seed.");
+    });
+
+    document.getElementById("seedControls").addEventListener("click", async () => {
+      const res = await fetch(`${apiBase}/grc/seed/controls`, { method: "POST" });
+      setText("seedControlsResult", res.ok ? "Controls seeded." : "Failed to seed.");
+    });
+
+    document.getElementById("evidenceForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!orgId) return setText("evidenceResult", "Set organization first.");
+      const payload = Object.fromEntries(new FormData(e.target));
+      const res = await fetch(`${apiBase}/grc/organizations/${orgId}/evidence`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      setText("evidenceResult", res.ok ? "Evidence saved." : "Failed to save.");
+      if (res.ok) e.target.reset();
+    });
+
+    document.getElementById("runEval").addEventListener("click", async () => {
+      if (!orgId) return setText("evalResult", "Set organization first.");
+      const res = await fetch(`${apiBase}/grc/organizations/${orgId}/evaluate`, { method: "POST" });
+      setText("evalResult", res.ok ? "Evaluation complete." : "Evaluation failed.");
+      if (res.ok) loadOverview();
+    });
+
+    document.getElementById("integrationForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!orgId) return setText("integrationResult", "Set organization first.");
+      const payload = Object.fromEntries(new FormData(e.target));
+      const res = await fetch(`${apiBase}/grc/organizations/${orgId}/integrations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      setText("integrationResult", res.ok ? "Integration saved." : "Failed to save.");
+    });
+
+    async function loadOverview() {
+      const res = await fetch(`${apiBase}/grc/organizations/${orgId}/overview`);
+      if (!res.ok) {
+        setText("grcSummary", "No overview yet.");
+        return;
+      }
+      const g = await res.json();
+      const summary = [
+        `Total: ${g.total_controls}`,
+        `Pass: ${g.pass_count}`,
+        `Fail: ${g.fail_count}`,
+        `Partial: ${g.partial_count}`,
+        `N/A: ${g.na_count}`,
+        `Unknown: ${g.unknown_count}`
+      ].map(t => `<span class="tag">${t}</span>`).join("");
+      document.getElementById("grcSummary").innerHTML = summary;
+      if (g.frameworks && g.frameworks.length) {
+        document.getElementById("grcFrameworks").innerHTML = g.frameworks.map(f =>
+          `<div><strong>${f.name}</strong> · Pass ${f.pass_count}, Fail ${f.fail_count}, Partial ${f.partial_count}, N/A ${f.na_count}, Unknown ${f.unknown_count}</div>`
+        ).join("");
+      } else {
+        document.getElementById("grcFrameworks").innerHTML = "<div class='muted'>No framework status yet.</div>";
+      }
+    }
+  </script>
+</body>
+</html>

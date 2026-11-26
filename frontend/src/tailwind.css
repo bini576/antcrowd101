@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-manrope bg-slate-100 text-slate-900 antialiased;
+  }
+}
+
+@layer components {
+  .auth-card {
+    @apply rounded-[30px] border border-white/70 bg-white/90 shadow-panel backdrop-blur;
+  }
+
+  .auth-input {
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100;
+  }
+
+  .auth-select {
+    @apply auth-input appearance-none pr-10;
+  }
+
+  .auth-label {
+    @apply mb-2 block text-sm font-semibold text-slate-700;
+  }
+
+  .auth-button-primary {
+    @apply inline-flex w-full items-center justify-center rounded-2xl bg-ink px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .auth-button-accent {
+    @apply inline-flex w-full items-center justify-center rounded-2xl bg-brand-500 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .auth-button-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200;
+  }
+}

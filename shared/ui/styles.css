@@ -1,0 +1,824 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+:root {
+  color-scheme: dark;
+  --antui-bg: #05070c;
+  --antui-bg-muted: #0a1018;
+  --antui-surface: rgba(10, 15, 23, 0.9);
+  --antui-surface-strong: rgba(14, 21, 32, 0.96);
+  --antui-surface-soft: rgba(17, 24, 37, 0.78);
+  --antui-border: rgba(255, 255, 255, 0.08);
+  --antui-border-strong: rgba(255, 74, 74, 0.2);
+  --antui-text: #f6f8fb;
+  --antui-muted: #95a1b4;
+  --antui-subtle: #667085;
+  --antui-accent: #ff3434;
+  --antui-accent-strong: #ff5a5a;
+  --antui-accent-soft: rgba(255, 52, 52, 0.12);
+  --antui-success: #18b26a;
+  --antui-warning: #f4b740;
+  --antui-danger: #ff6b6b;
+  --antui-shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+  --antui-shadow-soft: 0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  color: var(--antui-text);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(255, 52, 52, 0.14), transparent 22%),
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.045), transparent 28%),
+    linear-gradient(180deg, #05070c 0%, #09111a 42%, #0d1621 100%);
+  background-attachment: fixed;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.antui-app {
+  min-height: 100vh;
+  padding: 24px 0 32px;
+}
+
+.antui-shell {
+  width: min(1600px, calc(100% - 32px));
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.antui-shell-with-sidebar {
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+}
+
+.antui-shell-full {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.antui-sidebar-shell,
+.antui-main-shell {
+  min-width: 0;
+}
+
+.antui-sidebar-shell {
+  align-self: start;
+}
+
+.antui-navbar-shell {
+  position: sticky;
+  top: 18px;
+  z-index: 20;
+  margin-bottom: 20px;
+}
+
+.antui-content {
+  display: grid;
+  gap: 20px;
+}
+
+.antui-sidebar,
+.antui-navbar,
+.antui-card,
+.antui-page-header,
+.antui-table-wrap,
+.antui-form-section,
+.antui-loading,
+.antui-empty,
+.antui-modal {
+  border: 1px solid var(--antui-border);
+  background:
+    linear-gradient(180deg, rgba(16, 22, 33, 0.96), rgba(10, 16, 25, 0.96)),
+    linear-gradient(140deg, rgba(255, 52, 52, 0.03), rgba(255, 255, 255, 0.01));
+  box-shadow: var(--antui-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.antui-sidebar,
+.antui-navbar,
+.antui-card,
+.antui-table-wrap,
+.antui-form-section,
+.antui-loading,
+.antui-empty,
+.antui-modal {
+  border-radius: 20px;
+}
+
+.antui-sidebar {
+  position: sticky;
+  top: 18px;
+  padding: 24px;
+  display: grid;
+  gap: 22px;
+}
+
+.antui-sidebar-brand,
+.antui-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.antui-sidebar-brand-mark,
+.antui-navbar-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: radial-gradient(circle at 50% 0%, rgba(255, 52, 52, 0.16), rgba(12, 18, 28, 0.98) 68%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.antui-sidebar-mark,
+.antui-navbar-mark {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.antui-sidebar-brand-copy,
+.antui-navbar-brand-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.antui-sidebar-wordmark,
+.antui-navbar-wordmark {
+  width: min(190px, 100%);
+  height: auto;
+  object-fit: contain;
+}
+
+.antui-sidebar-brand span,
+.antui-navbar-brand-kicker {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--antui-muted);
+  font-weight: 700;
+}
+
+.antui-sidebar-brand strong,
+.antui-navbar-brand strong {
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.1;
+  color: var(--antui-text);
+}
+
+.antui-sidebar-description {
+  margin: 0;
+  color: var(--antui-muted);
+  font-size: 0.95rem;
+  line-height: 1.72;
+}
+
+.antui-sidebar-nav,
+.antui-navbar-nav {
+  display: flex;
+  gap: 10px;
+}
+
+.antui-sidebar-nav {
+  flex-direction: column;
+}
+
+.antui-sidebar-nav a,
+.antui-sidebar-nav button,
+.antui-navbar-nav a,
+.antui-navbar-nav button,
+.antui-link-button {
+  position: relative;
+  border: 1px solid var(--antui-border);
+  background: linear-gradient(180deg, rgba(22, 30, 44, 0.94), rgba(14, 20, 30, 0.94));
+  color: var(--antui-text);
+  border-radius: 14px;
+  padding: 11px 14px;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.antui-sidebar-nav a::before,
+.antui-sidebar-nav button::before,
+.antui-navbar-nav a::before,
+.antui-navbar-nav button::before,
+.antui-link-button::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background 160ms ease;
+}
+
+.antui-sidebar-nav a:hover,
+.antui-sidebar-nav button:hover,
+.antui-sidebar-nav .is-active,
+.antui-navbar-nav a:hover,
+.antui-navbar-nav button:hover,
+.antui-navbar-nav .is-active,
+.antui-link-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 52, 52, 0.26);
+  color: #ffffff;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.2);
+}
+
+.antui-sidebar-nav a:hover::before,
+.antui-sidebar-nav button:hover::before,
+.antui-sidebar-nav .is-active::before,
+.antui-navbar-nav a:hover::before,
+.antui-navbar-nav button:hover::before,
+.antui-navbar-nav .is-active::before,
+.antui-link-button:hover::before {
+  background: linear-gradient(180deg, var(--antui-accent), #ff7a7a);
+}
+
+.antui-sidebar-nav .is-active,
+.antui-navbar-nav .is-active {
+  background:
+    linear-gradient(180deg, rgba(255, 52, 52, 0.14), rgba(16, 22, 32, 0.98)),
+    linear-gradient(180deg, rgba(24, 34, 49, 0.96), rgba(14, 20, 30, 0.96));
+}
+
+.antui-sidebar-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.antui-navbar {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+
+.antui-navbar-nav {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.antui-navbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.antui-page-header {
+  overflow: hidden;
+  border-radius: 28px;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.22fr) minmax(300px, 420px);
+  padding: 28px;
+  position: relative;
+}
+
+.antui-page-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 52, 52, 0.14), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.015), transparent 46%);
+}
+
+.antui-page-header-copy,
+.antui-page-header-side {
+  position: relative;
+  z-index: 1;
+}
+
+.antui-page-header-copy {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.antui-page-header-copy h1,
+.antui-card-title,
+.antui-form-section h3,
+.antui-empty h3,
+.antui-modal-header h3 {
+  margin: 0;
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+}
+
+.antui-page-header-copy h1 {
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.antui-page-header-copy p,
+.antui-page-header-panel p,
+.antui-card-description,
+.antui-form-section p,
+.antui-stat p,
+.antui-empty p,
+.antui-loading p {
+  margin: 0;
+  color: var(--antui-muted);
+  line-height: 1.72;
+}
+
+.antui-eyebrow,
+.antui-card-eyebrow {
+  margin: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ff9090;
+  font-weight: 700;
+}
+
+.antui-page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.antui-page-header-side {
+  display: grid;
+  gap: 14px;
+}
+
+.antui-page-header-image {
+  width: 100%;
+  min-height: 230px;
+  max-height: 290px;
+  object-fit: cover;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.antui-page-header-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(16, 22, 33, 0.94), rgba(10, 15, 23, 0.98));
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.antui-card {
+  padding: 20px;
+}
+
+.antui-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.antui-card-title {
+  font-size: 1.2rem;
+  color: var(--antui-text);
+}
+
+.antui-card-description,
+.antui-card-header p {
+  margin-top: 8px;
+}
+
+.antui-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.antui-card-body {
+  min-width: 0;
+}
+
+.antui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.antui-badge-neutral {
+  background: rgba(111, 122, 144, 0.12);
+  color: #d0d7e4;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.antui-badge-accent {
+  background: var(--antui-accent-soft);
+  color: #ffd1d1;
+  border-color: rgba(255, 52, 52, 0.26);
+}
+
+.antui-badge-success {
+  background: rgba(24, 178, 106, 0.14);
+  color: #b8f5d3;
+  border-color: rgba(24, 178, 106, 0.24);
+}
+
+.antui-badge-warning {
+  background: rgba(244, 183, 64, 0.14);
+  color: #ffe0a0;
+  border-color: rgba(244, 183, 64, 0.24);
+}
+
+.antui-badge-danger {
+  background: rgba(255, 107, 107, 0.14);
+  color: #ffd2d2;
+  border-color: rgba(255, 107, 107, 0.24);
+}
+
+.antui-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 52, 52, 0.86), rgba(137, 17, 17, 0.92));
+  color: #fff;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.antui-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.antui-avatar-sm {
+  width: 34px;
+  height: 34px;
+  font-size: 0.76rem;
+}
+
+.antui-avatar-md {
+  width: 42px;
+  height: 42px;
+  font-size: 0.92rem;
+}
+
+.antui-avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: 1.12rem;
+}
+
+.antui-stat {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(16, 22, 33, 0.92), rgba(10, 15, 23, 0.98));
+  overflow: hidden;
+}
+
+.antui-stat::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 84px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.42);
+}
+
+.antui-stat-accent::before {
+  background: linear-gradient(90deg, var(--antui-accent), #ff8b8b);
+}
+
+.antui-stat-success::before {
+  background: linear-gradient(90deg, var(--antui-success), #68e0a1);
+}
+
+.antui-stat-warning::before {
+  background: linear-gradient(90deg, var(--antui-warning), #ffd36f);
+}
+
+.antui-stat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.antui-stat-top span {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--antui-muted);
+  font-weight: 700;
+}
+
+.antui-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  color: #ffd1d1;
+  background: rgba(255, 52, 52, 0.08);
+}
+
+.antui-stat strong {
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  font-size: clamp(1.7rem, 2vw, 2.2rem);
+  line-height: 1;
+}
+
+.antui-table-wrap {
+  overflow: auto;
+}
+
+.antui-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.antui-table th,
+.antui-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  vertical-align: top;
+  font-size: 0.95rem;
+}
+
+.antui-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--antui-muted);
+  font-weight: 700;
+}
+
+.antui-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.antui-table-empty {
+  padding: 18px;
+  color: var(--antui-muted);
+}
+
+.antui-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+}
+
+.antui-empty-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 52, 52, 0.36), transparent 58%),
+    linear-gradient(180deg, rgba(255, 52, 52, 0.16), rgba(15, 20, 31, 0.96));
+  border: 1px solid rgba(255, 52, 52, 0.18);
+}
+
+.antui-empty h3 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.antui-empty-action {
+  margin-left: auto;
+  align-self: center;
+}
+
+.antui-loading {
+  padding: 20px;
+}
+
+.antui-loading-line {
+  height: 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 52, 52, 0.16), rgba(255, 255, 255, 0.08));
+  background-size: 220% 100%;
+  animation: antui-shimmer 1.2s linear infinite;
+}
+
+.antui-loading-line-lg {
+  width: 42%;
+  height: 14px;
+}
+
+.antui-field {
+  display: grid;
+  gap: 8px;
+}
+
+.antui-field-label {
+  color: var(--antui-text);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.antui-field-hint {
+  color: var(--antui-muted);
+  font-size: 0.82rem;
+}
+
+.antui-form-section {
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+}
+
+.antui-form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.antui-form-section input,
+.antui-form-section select,
+.antui-form-section textarea,
+.antui-field input,
+.antui-field select,
+.antui-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 10, 17, 0.82);
+  color: var(--antui-text);
+}
+
+.antui-form-section input:focus,
+.antui-form-section select:focus,
+.antui-form-section textarea:focus,
+.antui-field input:focus,
+.antui-field select:focus,
+.antui-field textarea:focus,
+.antui-link-button:focus-visible,
+.antui-sidebar-nav button:focus-visible,
+.antui-sidebar-nav a:focus-visible,
+.antui-navbar-nav button:focus-visible,
+.antui-navbar-nav a:focus-visible {
+  outline: none;
+  border-color: rgba(255, 52, 52, 0.32);
+  box-shadow: 0 0 0 4px rgba(255, 52, 52, 0.12);
+}
+
+.antui-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 6, 12, 0.72);
+  z-index: 50;
+}
+
+.antui-modal {
+  width: min(720px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  padding: 20px;
+}
+
+.antui-modal-header,
+.antui-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.antui-modal-body {
+  margin: 18px 0;
+}
+
+@keyframes antui-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+
+@media (max-width: 1240px) {
+  .antui-page-header {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1080px) {
+  .antui-shell-with-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .antui-sidebar {
+    position: static;
+  }
+
+  .antui-navbar-shell {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .antui-app {
+    padding-top: 16px;
+  }
+
+  .antui-shell {
+    width: min(100%, calc(100% - 16px));
+    gap: 16px;
+  }
+
+  .antui-sidebar,
+  .antui-navbar,
+  .antui-card,
+  .antui-page-header,
+  .antui-form-section,
+  .antui-loading,
+  .antui-empty,
+  .antui-modal {
+    border-radius: 18px;
+  }
+
+  .antui-sidebar,
+  .antui-navbar,
+  .antui-card,
+  .antui-page-header,
+  .antui-form-section,
+  .antui-loading,
+  .antui-empty,
+  .antui-modal {
+    padding: 16px;
+  }
+
+  .antui-navbar {
+    grid-template-columns: 1fr;
+  }
+
+  .antui-navbar-nav,
+  .antui-navbar-actions {
+    justify-content: flex-start;
+  }
+
+  .antui-empty {
+    flex-direction: column;
+  }
+
+  .antui-empty-action {
+    margin-left: 0;
+  }
+}

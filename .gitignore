@@ -1,0 +1,48 @@
+.env
+node_modules/
+venv/
+__pycache__/
+*.pyc
+dist/
+.vite-cache/
+*.log
+.pytest_cache/
+
+# Additional project patterns (preserved from existing)
+.env.local
+.env.*.local
+.vite/
+*.py[cod]
+.venv/
+coverage/
+.demo/
+infra/service
+frontend/server/trustcenterapi
+.codex
+services/main-frontend/
+
+# Ensure ALL nested .env files are excluded (never commit real secrets)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Build artifacts
+**/dist/
+**/build/
+**/__pycache__/
+**/node_modules/
+
+# Go binaries
+services/auth-service/auth-service
+services/pen-service/backend/pen-service
+services/vdp-service/vdp-service
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

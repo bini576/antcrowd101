@@ -1,0 +1,504 @@
+/* ===== ANTCROWD WEB SECURITY LAB — DARK SLATE THEME ===== */
+
+.juice-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ---------- HEADER CARD ---------- */
+.juice-header-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+  background: #1e293b;
+  padding: 1.75rem;
+  color: #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+.juice-header-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 10%, rgba(245, 158, 11, 0.06), transparent 50%);
+  pointer-events: none;
+}
+
+.juice-header-card h1 {
+  margin: 0.4rem 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  color: #f1f5f9;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.juice-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.juice-brand-logo {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+}
+
+.juice-header-card p {
+  margin: 0;
+  color: #94a3b8;
+  line-height: 1.55;
+  font-size: 0.875rem;
+}
+
+.juice-header-actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.juice-launch-btn {
+  border-radius: 0.75rem;
+  background: #f59e0b;
+  color: #0f172a;
+  padding: 0.7rem 1.25rem;
+  font-weight: 800;
+  font-size: 0.875rem;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 180ms ease;
+}
+
+.juice-launch-btn:hover {
+  background: #d97706;
+}
+
+.juice-secondary-btn {
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  background: #0f172a;
+  padding: 0.7rem 1.25rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-decoration: none;
+  display: inline-block;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.juice-secondary-btn:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.juice-eyebrow {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #f59e0b;
+  opacity: 0.85;
+}
+
+/* ---------- MAIN GRID ---------- */
+.juice-main-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* ---------- FRAME CARDS ---------- */
+.juice-frame-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+  background: #1e293b;
+  padding: 1.5rem;
+}
+
+.juice-frame-card h2 {
+  margin-top: 0;
+  color: #f1f5f9;
+}
+
+/* ---------- SECTION HEADING ---------- */
+.juice-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.juice-kicker {
+  margin: 0 0 0.35rem;
+  color: #f59e0b;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.juice-count-badge {
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #f59e0b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.4rem 0.75rem;
+}
+
+/* ---------- LEVEL CARDS ---------- */
+.juice-level-list {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.juice-level-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.75rem;
+  background: #0f172a;
+  cursor: pointer;
+  padding: 1rem;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.juice-level-card:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.08);
+  transform: translateY(-1px);
+}
+
+.juice-level-card-active {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.06), #0f172a);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.1);
+}
+
+.juice-level-card h3,
+.juice-brief-card h3 {
+  margin: 0.4rem 0 0;
+  color: #f1f5f9;
+  font-size: 1rem;
+}
+
+.juice-level-card p,
+.juice-brief-card p {
+  margin: 0.5rem 0 0;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.juice-level-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.juice-level-meta span,
+.juice-submit-details span {
+  border-radius: 999px;
+  background: #334155;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.juice-level-meta .solved-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ---------- BRIEF CARD ---------- */
+.juice-brief-card {
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.75rem;
+  background: #0f172a;
+  padding: 1.15rem;
+}
+
+.juice-steps {
+  margin: 1rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.55rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.juice-note {
+  margin-top: 1rem;
+  border-left: 3px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.8rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+/* ---------- SUBMIT CARD ---------- */
+.juice-submit-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+  background: #1e293b;
+  padding: 1.5rem;
+}
+
+.juice-submit-card h2 {
+  margin-top: 0;
+  color: #f59e0b;
+  font-size: 1.1rem;
+}
+
+.juice-submit-copy {
+  margin: -0.15rem 0 1rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  font-size: 0.8rem;
+}
+
+.juice-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.juice-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.juice-form select {
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #0f172a;
+  color: #f1f5f9;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+/* Monospace is acceptable only in the flag input field itself */
+.juice-form input[type="text"],
+.juice-form input:not([type]) {
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.85rem;
+  background: #0f172a;
+  color: #f1f5f9;
+  caret-color: #f59e0b;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.juice-form input::placeholder {
+  color: #475569;
+}
+
+.juice-form input:focus,
+.juice-form select:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+}
+
+.juice-submit-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.juice-form button {
+  border: 0;
+  border-radius: 0.75rem;
+  background: #f59e0b;
+  color: #0f172a;
+  padding: 0.65rem 1rem;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+
+.juice-form button:hover {
+  background: #d97706;
+}
+
+.juice-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.juice-result-ok {
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.juice-result-error {
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* ---------- ADMIN TRACKING PANEL ---------- */
+.juice-admin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.juice-admin-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.juice-admin-stat {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.75rem;
+  background: #0f172a;
+  padding: 1.1rem;
+  text-align: center;
+}
+
+.juice-admin-stat .stat-val {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #f59e0b;
+  line-height: 1;
+}
+
+.juice-admin-stat .stat-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-top: 0.35rem;
+}
+
+.juice-admin-table-wrap {
+  overflow-x: auto;
+}
+
+.juice-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.juice-admin-table th {
+  padding: 0.65rem 1rem;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom: 1px solid #334155;
+}
+
+.juice-admin-table td {
+  padding: 0.75rem 1rem;
+  color: #f1f5f9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.juice-admin-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.juice-admin-table .pts-cell {
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* ---------- TARGET SHELL (iframe) ---------- */
+.juice-target-shell {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+  background: #1e293b;
+  padding: 1.5rem;
+}
+
+.juice-embed-copy {
+  margin: 0.8rem 0 0;
+  color: #94a3b8;
+}
+
+.juice-iframe-wrap {
+  margin-top: 1rem;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #0f172a;
+  min-height: 34rem;
+}
+
+.juice-iframe {
+  width: 100%;
+  min-height: 34rem;
+  border: 0;
+  background: #0f172a;
+}
+
+.juice-locked-panel {
+  display: grid;
+  min-height: 34rem;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  font-weight: 700;
+  background: #0f172a;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (min-width: 1100px) {
+  .juice-main-grid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .juice-brand-row {
+    align-items: flex-start;
+  }
+
+  .juice-brand-logo {
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+
+  .juice-iframe-wrap,
+  .juice-iframe {
+    min-height: 26rem;
+  }
+
+  .juice-admin-summary {
+    grid-template-columns: 1fr;
+  }
+}

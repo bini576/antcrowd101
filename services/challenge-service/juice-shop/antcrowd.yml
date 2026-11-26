@@ -1,0 +1,15 @@
+application:
+  name: 'AntCrowd Web Security Lab'
+  logo: antcrowd-logo.jpg
+  theme: deeporange-indigo
+  showVersionNumber: false
+  showGitHubLinks: false
+  social:
+    twitterUrl: 'https://antcrowd.local'
+    facebookUrl: 'https://antcrowd.local'
+    slackUrl: 'https://antcrowd.local'
+    pressKitUrl: 'https://antcrowd.local'
+  welcomeBanner:
+    showOnFirstStart: false
+    title: 'Welcome to AntCrowd Web Security Lab'
+    message: "<p>This branded Juice Shop target is integrated into AntCrowd. Solve levels and submit flags back in the AntCrowd workspace for persistent scoring.</p>"

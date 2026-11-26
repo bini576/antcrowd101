@@ -1,0 +1,1464 @@
+apex@Apex:~/Documents/integration (2)/integration/antcrowd101$ sudo docker compose -f infra/docker-compose.yml up --build
+[sudo] password for apex: 
+WARN[0000] Docker Compose requires buildx plugin to be installed 
+Sending build context to Docker daemon  1.446kB
+Sending build context to Docker daemon  4.973kB
+Step 1/9 : FROM bkimminich/juice-shop:latest AS base
+ ---> aaf41a29a6df
+Step 2/9 : FROM node:22-alpine AS patcher
+Sending build context to Docker daemon  4.771kB
+ ---> eaea451ff9df
+Step 3/9 : COPY --from=base /juice-shop /juice-shop
+Sending build context to Docker daemon  12.58kB
+Step 1/13 : FROM golang:1.22-alpine AS builder
+ ---> 4129f51f28c9
+Step 2/13 : WORKDIR /app
+ ---> Using cache
+ ---> d9b5173d998d
+Step 3/13 : COPY go.mod ./
+Step 1/13 : FROM golang:1.22-alpine AS builder
+ ---> 4129f51f28c9
+Step 2/13 : WORKDIR /app
+ ---> Using cache
+ ---> d9b5173d998d
+Step 3/13 : COPY go.mod go.sum ./
+Step 1/13 : FROM golang:1.22-alpine AS build
+ ---> 4129f51f28c9
+Step 2/13 : WORKDIR /app
+ ---> Using cache
+ ---> d9b5173d998d
+Step 3/13 : COPY go.mod go.sum* ./
+ ---> Using cache
+ ---> c80d345ba52e
+Step 4/13 : RUN go mod download
+Sending build context to Docker daemon  19.63kB
+ ---> Using cache
+ ---> 77b2d5baae33
+Step 4/13 : RUN go mod download
+ ---> Using cache
+ ---> b5dfad790c97
+Step 5/13 : COPY . .
+ ---> Using cache
+ ---> d7811fcd12f4
+Step 4/13 : RUN go mod download
+ ---> Using cache
+ ---> 14544a1147ee
+Step 5/13 : COPY . .
+ ---> Using cache
+ ---> db8095a0264a
+Step 5/13 : COPY . .
+ ---> Using cache
+ ---> 1414cb24fae0
+Step 6/13 : RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o trust-center .
+ ---> Using cache
+ ---> b3124d6f2db0
+Step 6/13 : RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o code-service .
+ ---> Using cache
+ ---> d44831bee83e
+Step 7/13 : FROM alpine:3.19 ---> Using cache
+
+ ---> Using cache
+ ---> 2e1d8cbe670d
+Step 7/13 : FROM alpine:3.19
+ ---> 83b2b6703a62
+Step 8/13 : WORKDIR /app
+ ---> Using cache
+ ---> a095f7455c55
+Step 9/13 : COPY --from=builder /app/trust-center /app/trust-center
+ ---> 83b2b6703a62
+Step 8/13 : WORKDIR /app
+ ---> Using cache
+ ---> 721c411835ca
+Step 6/13 : RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /bin/pen-researcher ./main.go
+ ---> Using cache
+ ---> a095f7455c55
+Step 9/13 : COPY --from=builder /app/code-service /app/code-service
+Sending build context to Docker daemon  54.17kB
+ ---> Using cache
+ ---> 0800298f8370
+Step 7/13 : FROM alpine:3.20
+ ---> bf8527eb54c3
+Step 8/13 : RUN adduser -D appuser
+ ---> Using cache
+ ---> 236c9c8617f0
+Step 9/13 : USER appuser
+ ---> Using cache
+ ---> 32cdd9b374a2
+Step 1/13 : FROM golang:1.22-alpine AS build
+ ---> 4129f51f28c9
+Step 2/13 : WORKDIR /app
+ ---> Using cache
+ ---> d9b5173d998d
+Step 3/13 : COPY go.mod go.sum* ./
+Step 10/13 : COPY --from=build /bin/pen-researcher /bin/pen-researcher
+Step 1/8 : FROM node:22-alpine
+ ---> eaea451ff9df
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+ ---> 28f20108d33e
+Step 3/8 : COPY package*.json ./
+ ---> Using cache
+ ---> 602e28fefc3f
+Step 4/13 : RUN go mod download
+ ---> Using cache
+ ---> cc3930692bea
+Step 5/13 : COPY . .
+Sending build context to Docker daemon  92.14kB
+ ---> Using cache
+ ---> 398cb29d07be
+Step 6/13 : RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /bin/pen-service ./main.go
+ ---> Using cache
+ ---> b9875782492b
+Step 7/13 : FROM alpine:3.20
+ ---> bf8527eb54c3
+Step 8/13 : RUN adduser -D appuser
+ ---> Using cache
+ ---> 236c9c8617f0
+Step 9/13 : USER appuser
+ ---> Using cache
+ ---> 32cdd9b374a2
+Step 10/13 : COPY --from=build /bin/pen-service /bin/pen-service
+Step 1/11 : FROM python:3.11-slim
+ ---> 466c0182639bext to Docker daemon  524.4kB
+Step 2/11 : ENV PYTHONDONTWRITEBYTECODE=1
+ ---> Using cache
+ ---> 83708805c197
+Step 3/11 : ENV PYTHONUNBUFFERED=1
+ ---> Using cache
+ ---> 036e125137d4
+Step 4/8 : RUN npm install
+ ---> d1bf7284b12d
+Step 4/9 : COPY antcrowd-theme.css /juice-shop/frontend/dist/frontend/assets/public/antcrowd-theme.css
+ ---> Using cache
+ ---> 692dc10146d1
+Step 4/11 : WORKDIR /app
+ ---> Using cache
+ ---> eabac8665f16
+Step 5/8 : COPY . .
+ ---> Using cache
+ ---> 1b8b3fdb3de7
+Step 5/9 : RUN node -e "const fs = require('fs');const p = '/juice-shop/frontend/dist/frontend/index.html';let h = fs.readFileSync(p, 'utf8');h = h.replace('</head>', '<link rel=\"stylesheet\" href=\"/assets/public/antcrowd-theme.css\"></head>');fs.writeFileSync(p, h);console.log('Injected antcrowd-theme.css into index.html');"
+ ---> Using cache
+ ---> Using cache
+ ---> e3c363c0ac0e
+Step 5/11 : ENV PYTHONPATH=/app:$PYTHONPATH
+ ---> Using cache
+ ---> 870975577b68
+Step 6/9 : FROM bkimminich/juice-shop:latest
+ ---> aaf41a29a6df
+Step 7/9 : COPY --from=patcher /juice-shop/frontend/dist/frontend/index.html /juice-shop/frontend/dist/frontend/index.html
+ ---> Using cache
+ ---> Using cache
+ ---> 83ce88cdb663
+Step 6/8 : EXPOSE 8080
+ ---> Using cache
+ ---> f9a42e5f8595
+Step 6/11 : COPY requirements.txt ./
+ ---> Using cache
+ ---> 80b370fd9745
+Step 7/8 : CMD ["npm", "start"]
+ ---> Using cache
+ ---> fe899ad1accd
+Step 7/11 : RUN pip install --no-cache-dir -r requirements.txt
+ ---> Using cache
+ ---> c7671eb2216f
+Step 8/8 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 7d7648d248ef
+ ---> Using cache
+ ---> 83687f9eec53
+Step 10/13 : COPY schema.sql /app/schema.sql
+ ---> Using cache
+ ---> b4894eac2fd0
+Step 8/11 : COPY . .
+ ---> Using cache
+ ---> 29d74514de61
+Step 11/13 : EXPOSE 8080
+ ---> Using cache
+ ---> Using cache
+ ---> fa246db43262
+Step 12/13 : CMD ["/app/trust-center"]
+ ---> ea19c431a060
+Step 10/13 : COPY migration.sql /app/migration.sql
+ ---> Using cache
+Successfully built 7d7648d248ef
+ ---> Using cache
+ ---> adfa01e40e0c
+Step 11/13 : EXPOSE 8080
+ ---> Using cache
+ ---> 610bf57d0dac
+Step 13/13 : LABEL com.docker.compose.image.builder=classic
+ ---> 07f6e1d38310
+Step 11/13 : EXPOSE 8086
+ ---> a704b117a099
+Step 8/9 : COPY --from=patcher /juice-shop/frontend/dist/frontend/assets/public/antcrowd-theme.css /juice-shop/frontend/dist/frontend/assets/public/antcrowd-theme.css
+ ---> Using cache
+ ---> 8728a910c876
+Step 12/13 : ENTRYPOINT ["/bin/pen-service"]
+Successfully tagged infra-auth-service:latest
+ ---> 579750289b5c
+Step 11/13 : EXPOSE 8087
+ ---> Using cache
+ ---> 320686f73e79
+ ---> Using cache
+ ---> 262cc742c208
+Step 12/13 : CMD ["/app/code-service"]
+Successfully built 320686f73e79
+ ---> Using cache
+ ---> ae7e0719dd20
+Step 13/13 : LABEL com.docker.compose.image.builder=classic
+Successfully tagged infra-trust-center:latest
+ ---> Using cachetext to Docker daemon  1.049MB
+ ---> 75daf52b918a
+ ---> Using cache
+ ---> f990ed11f395
+Step 13/13 : LABEL com.docker.compose.image.builder=classic
+Step 12/13 : ENTRYPOINT ["/bin/pen-researcher"]
+ ---> Using cache
+ ---> f5135f3edd22
+Successfully built f5135f3edd22
+ ---> Using cache
+ ---> 0adf1894c9d4
+Step 9/11 : EXPOSE 8000
+ ---> Using cache
+ ---> e28a8b18630e
+Step 13/13 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> b321d8fc5a4f
+Successfully built b321d8fc5a4f
+Successfully tagged infra-pen-service-backend:latest
+Successfully tagged infra-pen-researcher-backend:latest
+ ---> Using cache
+ ---> Using cache
+ ---> 82d36fa9f19e
+Successfully built 82d36fa9f19e
+Successfully tagged infra-code-service:latest
+ ---> Using cache
+ ---> 63f92f2f5ae0
+Step 10/11 : CMD ["sh", "-c", "alembic upgrade head && python -m app.services.bootstrap && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+ ---> Using cache
+ ---> 577e721672a9
+Step 11/11 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> dd7ec3285dbf
+Successfully built dd7ec3285dbf
+Successfully tagged infra-training-service-backend:latest
+ ---> eed546819ec2
+Step 9/9 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 5208e9d14b09
+Successfully built 5208e9d14b09
+Successfully tagged infra-juice-shop:latest
+Sending build context to Docker daemon  1.167MB
+Step 1/8 : FROM node:20-alpine
+ ---> ccfb9f0dc7ac
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+ ---> 9c32217767e7
+Step 3/8 : COPY package.json package-lock.json ./
+ ---> Using cache
+ ---> c9bc610ebda5
+Step 4/8 : RUN npm ci
+ ---> Using cache
+ ---> ad6e0d300f94
+Step 5/8 : COPY . .
+ ---> Using cachetext to Docker daemon  3.158MB
+ ---> 4b2a45df98e6
+Step 6/8 : EXPOSE 5173
+ ---> Using cache
+ ---> 47fe90db980b
+Step 7/8 : CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+ ---> Using cache
+ ---> 0c5cdb0a4a03
+Step 8/8 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cachetext to Docker daemon  1.573MB
+ ---> 838e0bda734b
+Successfully built 838e0bda734b daemon  2.103MB
+Successfully tagged infra-frontend:latest.103MB
+[+] up 8/17ld context to Docker daemon  2.098MB
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ⠙ Image infra-vdp-service                      Building                                                                                                                                                                                  1.9s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠙ Image infra-bug-bounty-service               Building                                                                                                                                                                                  1.5s
+ ⠙ Image infra-challenge-service                Building                                                                                                                                                                                  1.5s
+ ⠙ Image infra-ai-redteam-service               Building                                                                                                                                                                                  1.5s
+ ⠙ Image infra-pen-service-frontend             Building                                                                                                                                                                                  1.4s
+[+] up 8/17fra-pen-external-researcher-frontend Building                                                                                                                                                                                  1.4s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ⠹ Image infra-vdp-service                      Building                                                                                                                                                                                  2.0s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠹ Image infra-bug-bounty-service               Building                                                                                                                                                                                  1.6s
+ ⠹ Image infra-challenge-service                Building                                                                                                                                                                                  1.6s
+[+] up 8/17fra-ai-redteam-service               Building                                                                                                                                                                                  1.6s
+[+] up 8/17fra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+[+] up 8/17fra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ⠦ Image infra-vdp-service                      Building                                                                                                                                                                                  2.4s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠦ Image infra-bug-bounty-service               Building                                                                                                                                                                                  2.0s
+ ⠦ Image infra-challenge-service                Building                                                                                                                                                                                  2.0s
+ ⠦ Image infra-ai-redteam-service               Building                                                                                                                                                                                  2.0s
+ ⠦ Image infra-pen-service-frontend             Building                                                                                                                                                                                  1.9s
+ ⠦ Image infra-pen-external-researcher-frontend Building                                                                                                                                                                                  1.9s
+ ⠦ Image infra-pen-researcher-frontend          Building                                                                                                                                                                                  1.9s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                     1.3s
+ ⠦ Image infra-training-organization-frontend   Building                                                                                                                                                                                  1.8s
+ ⠦ Image infra-training-researcher-frontend     Building                                                                                                                                                                                  1.8s
+ ---> 0651371c11ed
+Step 11/13 : EXPOSE 8082
+ ---> Using cache
+ ---> 9e6c99f06e1e
+Step 12/13 : ENTRYPOINT ["/app/vdp-service"]
+ ---> Using cache
+ ---> b7a45004db20
+Step 13/13 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 6a35ed8a5d12
+Successfully built 6a35ed8a5d12
+Successfully tagged infra-vdp-service:latest6MB
+Sending build context to Docker daemon  3.237MB
+Step 1/16 : FROM node:20-alpine AS build524.4kB
+ ---> ccfb9f0dc7ac
+Step 2/16 : WORKDIR /app/frontend-organization
+ ---> Using cache
+ ---> d46b7f3aa8ca
+Step 3/16 : COPY frontend-organization/package*.json ./
+ ---> Using cache
+ ---> 40fc8c3fbbf9
+Step 4/16 : ENV NODE_ENV=development
+ ---> Using cache
+ ---> 46a9a61fe3c8
+Step 5/16 : RUN npm ci --include=dev
+ ---> Using cache
+ ---> b2ce832166e3
+Step 6/16 : COPY frontend-organization/ ./
+ ---> Using cache
+ ---> a0ebd08c21c2
+Step 7/16 : COPY shared-api/ ../shared-api/
+ ---> Using cachetext to Docker daemon  3.146MB
+ ---> cead3898aa3f
+Step 8/16 : COPY shared-session/ ../shared-session/
+ ---> Using cache
+ ---> 62560ee25478
+Step 9/16 : COPY shared-ui/ ../shared-ui/
+ ---> Using cache
+ ---> 0fcb50f93ce7
+Step 10/16 : RUN npm run build
+ ---> Using cache
+ ---> 289892afe4cd
+Step 11/16 : FROM nginx:1.27-alpine
+ ---> 6769dc3a703c
+Step 12/16 : COPY --from=build /app/frontend-organization/dist/ /usr/share/nginx/html/
+Sending build context to Docker daemon  3.237MB
+Step 1/16 : FROM node:20-alpine AS build3.681MB
+ ---> ccfb9f0dc7ac
+Step 2/16 : WORKDIR /app/frontend-researcher
+ ---> Using cachetext to Docker daemon  3.681MB
+ ---> 35894b37b1bf
+Step 3/16 : COPY frontend-researcher/package*.json ./
+ ---> Using cache
+ ---> 467a9a5b6d58
+Step 4/16 : ENV NODE_ENV=development
+ ---> Using cache
+ ---> 406ceb154fa6
+Step 5/16 : RUN npm ci --include=dev
+ ---> Using cache
+ ---> 6fefd1ec5790
+Step 6/16 : COPY frontend-researcher/ ./
+ ---> Using cache
+ ---> Using cachetext to Docker daemon  524.4kB
+ ---> bbd62095b151
+Step 7/16 : COPY shared-api/ ../shared-api/
+ ---> Using cache
+ ---> 9bf848b2c27b
+Step 8/16 : COPY shared-session/ ../shared-session/
+ ---> Using cache
+ ---> c2a0e1861dd8
+Step 9/16 : COPY shared-ui/ ../shared-ui/
+ ---> Using cache
+ ---> 68d1bb70d864
+Step 10/16 : RUN npm run build
+ ---> Using cachetext to Docker daemon  3.681MB
+ ---> 5bb1a5baabb8
+Step 11/16 : FROM nginx:1.27-alpine
+ ---> 6769dc3a703c
+Step 12/16 : COPY --from=build /app/frontend-researcher/dist/ /usr/share/nginx/html/
+ ---> b441377c5c44ext to Docker daemon  524.5kB
+Step 13/16 : COPY frontend-organization/nginx.conf /etc/nginx/conf.d/default.conf
+ ---> Using cache
+ ---> da79a0a14d65
+Step 14/16 : EXPOSE 80
+ ---> Using cache
+ ---> 4eb80ae1c6f8
+Step 15/16 : CMD ["nginx", "-g", "daemon off;"]
+ ---> Using cache
+ ---> 45bb4079b2da
+Step 16/16 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+[+] up 10/20916a5a
+[+] up 11/20ra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                     2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠏ Image infra-bug-bounty-service               Building                                                                                                                                                                                  2.8s
+ ⠏ Image infra-challenge-service                Building                                                                                                                                                                                  2.8s
+ ⠏ Image infra-ai-redteam-service               Building                                                                                                                                                                                  2.8s
+ ⠏ Image infra-pen-service-frontend             Building                                                                                                                                                                                  2.7s
+ ⠏ Image infra-pen-external-researcher-frontend Building                                                                                                                                                                                  2.7s
+ ⠏ Image infra-pen-researcher-frontend          Building                                                                                                                                                                                  2.7s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                     1.3s
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                     2.3s
+ ✔ Image infra-training-researcher-frontend     Built                                                                                                                                                                                     2.4s
+ ⠸ Image infra-vdp-org-admin-frontend           Building                                                                                                                                                                                  0.8s
+ ⠸ Image infra-admin-service-frontend           Building                                                                                                                                                                                  0.8s
+ ⠸ Image infra-vdp-frontend-public              Building                                                                                                                                                                                  0.8s
+Sending build context to Docker daemon   4.55MB
+Sending build context to Docker daemon   4.55MB
+Step 1/14 : FROM node:20-alpine AS build
+ ---> ccfb9f0dc7ac
+Step 2/14 : WORKDIR /app/frontend
+Step 1/14 : FROM node:20-alpine AS build
+ ---> ccfb9f0dc7ac
+Step 2/14 : WORKDIR /app/external-researcher-frontend
+ ---> Using cache
+ ---> 795df04dd3c3
+Step 3/14 : COPY frontend/package*.json ./
+ ---> Using cache
+ ---> fde9566622ab
+Step 3/14 : COPY external-researcher-frontend/package*.json ./
+ ---> Using cache
+ ---> e9518e7d6b36
+Step 4/14 : ENV NODE_ENV=development
+ ---> Using cache
+ ---> 4a548e6ad815
+Step 4/14 : ENV NODE_ENV=development
+ ---> Using cache
+ ---> 3d6322429296
+Step 5/14 : RUN npm ci --include=dev
+[+] up 11/20cache
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                     2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠋ Image infra-bug-bounty-service               Building                                                                                                                                                                                  2.9s
+ ⠋ Image infra-challenge-service                Building                                                                                                                                                                                  2.9s
+[+] up 11/20ra-ai-redteam-service               Building                                                                                                                                                                                  2.9s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                     2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠙ Image infra-bug-bounty-service               Building                                                                                                                                                                                  3.0s
+ ⠙ Image infra-challenge-service                Building                                                                                                                                                                                  3.0s
+ ⠙ Image infra-ai-redteam-service               Building                                                                                                                                                                                  3.0s
+ ⠙ Image infra-pen-service-frontend             Building                                                                                                                                                                                  2.9s
+ ⠙ Image infra-pen-external-researcher-frontend Building                                                                                                                                                                                  2.9s
+ ⠙ Image infra-pen-researcher-frontend          Building                                                                                                                                                                                  2.9s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                     1.3s
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                     2.3s
+ ✔ Image infra-training-researcher-frontend     Built                                                                                                                                                                                     2.4s
+ ⠴ Image infra-vdp-org-admin-frontend           Building                                                                                                                                                                                  1.0s
+ ⠴ Image infra-admin-service-frontend           Building                                                                                                                                                                                  1.0s
+ ⠴ Image infra-vdp-frontend-public              Building                                                                                                                                                                                  1.0s
+Step 1/14 : FROM node:20-alpine AS build1.584MB
+ ---> ccfb9f0dc7ac
+Step 2/14 : WORKDIR /app/researcher-frontend
+ ---> Using cache
+ ---> Using cache
+ ---> Using cache
+ ---> 8faa1a5797cf
+[+] up 11/20COPY researcher-frontend/package*.json ./
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                     2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠹ Image infra-bug-bounty-service               Building                                                                                                                                                                                  3.1s
+ ⠹ Image infra-challenge-service                Building                                                                                                                                                                                  3.1s
+ ⠹ Image infra-ai-redteam-service               Building                                                                                                                                                                                  3.1s
+ ⠹ Image infra-pen-service-frontend             Building                                                                                                                                                                                  3.0s
+ ⠹ Image infra-pen-external-researcher-frontend Building                                                                                                                                                                                  3.0s
+ ⠹ Image infra-pen-researcher-frontend          Building                                                                                                                                                                                  3.0s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                     1.3s
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                     2.3s
+ ✔ Image infra-training-researcher-frontend     Built                                                                                                                                                                                     2.4s
+ ⠦ Image infra-vdp-org-admin-frontend           Building                                                                                                                                                                                  1.1s
+ ⠦ Image infra-admin-service-frontend           Building                                                                                                                                                                                  1.1s
+ ⠦ Image infra-vdp-frontend-public              Building                                                                                                                                                                                  1.1s
+ ---> Using cache
+ ---> Using cache
+ ---> c520b76e536f
+Step 4/12 : RUN npm ci ---> Using cache
+ ---> 232f3257b53c
+Step 7/14 : COPY shared/ ../shared/
+ ---> 9c32217767e7
+Step 3/12 : COPY package*.json ./
+
+ ---> Using cache
+ ---> 10444a9a688f
+Step 4/12 : RUN npm ci
+ ---> Using cache
+ ---> d86d7ba83329
+Step 8/14 : RUN npm run build
+ ---> Using cache
+ ---> 15cad8f19248
+Step 9/14 : FROM nginx:1.27-alpine
+ ---> Using cache
+ ---> 917fad7d07a4
+Step 5/12 : COPY . .
+ ---> Using cache
+ ---> 6fd2c76d8bb8
+Step 5/12 : COPY . .
+ ---> 6769dc3a703c
+Step 10/14 : COPY --from=build /app/researcher-frontend/dist/ /usr/share/nginx/html/
+ ---> 31af77dd301f
+Step 11/14 : COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+ ---> 26eefc00267b
+Step 11/14 : COPY external-researcher-frontend/nginx.conf /etc/nginx/conf.d/default.conf
+ ---> Using cachetext to Docker daemon  524.4kB
+ ---> 3eb7e840d01f
+ ---> Using cache
+ ---> 06f0a6c2b8cc
+Step 12/14 : EXPOSE 80
+Step 12/14 : EXPOSE 80
+[+] up 11/20cache
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                     2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠸ Image infra-bug-bounty-service               Building                                                                                                                                                                                  3.2s
+ ⠸ Image infra-challenge-service                Building                                                                                                                                                                                  3.2s
+ ⠸ Image infra-ai-redteam-service               Building                                                                                                                                                                                  3.2s
+ ⠸ Image infra-pen-service-frontend             Building                                                                                                                                                                                  3.1s
+ ⠸ Image infra-pen-external-researcher-frontend Building                                                                                                                                                                                  3.1s
+ ⠸ Image infra-pen-researcher-frontend          Building                                                                                                                                                                                  3.1s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                     1.3s
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                     2.3s
+[+] up 13/20ra-training-researcher-frontend     Built                                                                                                                                                                                     2.4s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                     2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                     0.5s
+ ⠼ Image infra-bug-bounty-service               Building                                                                                                                                                                                  3.3s
+ ⠼ Image infra-challenge-service                Building                                                                                                                                                                                  3.3s
+ ⠼ Image infra-ai-redteam-service               Building                                                                                                                                                                                  3.3s
+ ✔ Image infra-pen-service-frontend             Built                                                                                                                                                                                     3.2s
+ ✔ Image infra-pen-external-researcher-frontend Built                                                                                                                                                                                     3.2s
+ ⠼ Image infra-pen-researcher-frontend          Building                                                                                                                                                                                  3.2s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                     1.3s
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                     2.3s
+ ✔ Image infra-training-researcher-frontend     Built                                                                                                                                                                                     2.4s
+ ⠇ Image infra-vdp-org-admin-frontend           Building                                                                                                                                                                                  1.3s
+ ⠇ Image infra-admin-service-frontend           Building                                                                                                                                                                                  1.3s
+ ⠇ Image infra-vdp-frontend-public              Building                                                                                                                                                                                  1.3s
+ ---> Using cache
+ ---> 6b26047d7a75
+ ---> 54b07e4ac75b
+Step 11/14 : COPY researcher-frontend/nginx.conf /etc/nginx/conf.d/default.conf
+ ---> ffd7cec737e3
+Step 9/12 : COPY nginx.conf /etc/nginx/conf.d/default.conf
+Step 9/12 : COPY nginx.conf /etc/nginx/conf.d/default.conf
+ ---> Using cache
+ ---> 0993117fab50
+Step 12/14 : EXPOSE 80
+ ---> Using cache
+ ---> 7c90a800c85d
+Step 10/12 : EXPOSE 80
+ ---> Using cache
+ ---> 71c91ab1c2e2
+Step 10/12 : EXPOSE 80
+ ---> Using cache
+ ---> fa6db41dc076
+Step 11/12 : CMD ["nginx", "-g", "daemon off;"]
+ ---> Using cache
+ ---> 59de911f6bfb
+[+] up 13/20 CMD ["nginx", "-g", "daemon off;"]
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                     0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                     0.5s
+[+] up 16/20d context to Docker daemon  6.293MB Built                                                                                                                                                                                     0.5s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                    0.5ss
+[+] up 16/20ra-pen-service-backend              Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                    2.5ss
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                    0.5ss
+[+] up 16/20ra-bug-bounty-service               Building                                                                                                                                                                                 18.1s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                    2.5ss
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                    0.5s
+ ⠦ Image infra-bug-bounty-service               Building                                                                                                                                                                                 18.5s
+ ⠦ Image infra-challenge-service                Building                                                                                                                                                                                 18.5s
+[+] up 16/20ra-ai-redteam-service               Building                                                                                                                                                                                 18.5s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6s
+[+] up 17/20d context to Docker daemon  51.92MB Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                    2.5ss
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                    0.5ss
+ ⠦ Image infra-bug-bounty-service               Building                                                                                                                                                                                 58.5s
+ ⠦ Image infra-challenge-service                Building                                                                                                                                                                                 58.5s
+ ⠦ Image infra-ai-redteam-service               Building                                                                                                                                                                                 58.5s
+ ✔ Image infra-pen-service-frontend             Built                                                                                                                                                                                    3.2s
+[+] up 17/20ra-pen-external-researcher-frontend Built                                                                                                                                                                                    3.2s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                    2.5ss
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                    0.5s
+ ⠸ Image infra-bug-bounty-service               Building                                                                                                                                                                                 59.2s
+ ⠸ Image infra-challenge-service                Building                                                                                                                                                                                 59.2s
+ ⠸ Image infra-ai-redteam-service               Building                                                                                                                                                                                 59.2s
+ ✔ Image infra-pen-service-frontend             Built                                                                                                                                                                                    3.2s
+ ✔ Image infra-pen-external-researcher-frontend Built                                                                                                                                                                                    3.2s
+ ✔ Image infra-pen-researcher-frontend          Built                                                                                                                                                                                    3.4s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                    1.3s
+[+] up 17/20ra-training-organization-frontend   Built                                                                                                                                                                                    2.3s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                    0.5ss
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                    2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                    0.6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                    0.5s
+ ⠹ Image infra-bug-bounty-service               Building                                                                                                                                                                                 71.1s
+[+] up 17/20ra-challenge-service                Building                                                                                                                                                                                 71.1s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                    0.6ss
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                    0.6s
+[+] up 17/20ra-trust-center                     Built                                                                                                                                                                                    0.5s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6ss
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6ss
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                   0.5ss
+[+] up 17/20ra-pen-service-backend              Built                                                                                                                                                                                   0.5ss
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6ss
+[+] up 17/20ra-code-service                     Built                                                                                                                                                                                   0.6sss
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6sss
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6sss
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                   0.5s0s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                   0.5s0s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                   0.5s0s
+[+] up 17/20ra-vdp-service                      Built                                                                                                                                                                                   2.5ss
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s1s
+[+] up 17/20ra-code-service                     Built                                                                                                                                                                                   0.6s1s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s4s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6s4s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                   0.5s4s
+[+] up 17/20ra-pen-service-backend              Built                                                                                                                                                                                   0.5ss
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6sss
+[+] up 17/20ra-code-service                     Built                                                                                                                                                                                   0.6ss
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s7s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6s7s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                   0.5s0s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                   0.5s0s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                   0.5s0s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                   2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                   0.6s6s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                   0.5s6s
+ ⠴ Image infra-bug-bounty-service               Building                                                                                                                                                                                104.4s
+ ⠴ Image infra-challenge-service                Building                                                                                                                                                                                104.4s
+ ⠴ Image infra-ai-redteam-service               Building                                                                                                                                                                                104.4s
+ ✔ Image infra-pen-service-frontend             Built                                                                                                                                                                                   3.2s
+ ✔ Image infra-pen-external-researcher-frontend Built                                                                                                                                                                                   3.2ss
+ ✔ Image infra-pen-researcher-frontend          Built                                                                                                                                                                                   3.4s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                   1.3s
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                   2.3s
+ ✔ Image infra-training-researcher-frontend     Built                                                                                                                                                                                   2.4ss
+ ✔ Image infra-vdp-org-admin-frontend           Built                                                                                                                                                                                   1.4s
+ ✔ Image infra-admin-service-frontend           Built                                                                                                                                                                                   16.7s
+ ✔ Image infra-vdp-frontend-public              Built                                                                                                                                                                                   1.4s
+Successfully tagged infra-challenge-service:latest
+Successfully tagged infra-ai-redteam-service:latest
+Sending build context to Docker daemon  1.271MB
+Step 1/8 : FROM node:22-alpine
+ ---> eaea451ff9df
+Step 2/8 : WORKDIR /app
+Sending build context to Docker daemon  1.279MB
+ ---> Using cache
+ ---> 28f20108d33e
+Step 3/8 : COPY package.json ./
+Step 1/8 : FROM node:22-alpine
+ ---> eaea451ff9df
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+ ---> 28f20108d33e
+Step 3/8 : COPY package.json ./
+ ---> Using cache
+ ---> ae0e253c53d0
+Step 4/8 : RUN npm install --legacy-peer-deps
+ ---> Using cache
+ ---> 91fed37f0207
+Step 4/8 : RUN npm install --legacy-peer-deps
+ ---> Using cache
+ ---> fd73b900cfd3
+Step 5/8 : COPY . .
+ ---> Using cache
+ ---> 14b2aeb237c0
+Step 5/8 : COPY . .
+ ---> 0f18276e2d3a
+Step 6/8 : EXPOSE 3001
+ ---> a04b25ae5fcb
+Step 6/8 : EXPOSE 3000
+ ---> Running in 7f87d65325fe
+ ---> Running in 8fc89dc70cff
+ ---> Removed intermediate container 7f87d65325fe
+ ---> 4ec706ad1ab1
+Step 7/8 : CMD ["npm", "run", "dev"]
+[+] up 21/22d intermediate container 8fc89dc70cff
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s
+[+] up 21/22ra-code-service                     Built                                                                                                                                                                                   0.6s
+[+] up 21/22ra-juice-shop                       Built                                                                                                                                                                                   0.6s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6s
+[+] up 21/22ra-trust-center                     Built                                                                                                                                                                                   0.5s
+[+] up 21/22ra-juice-shop                       Built                                                                                                                                                                                   0.6s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6s5s
+[+] up 21/22ra-trust-center                     Built                                                                                                                                                                                   0.5s5s
+[+] up 21/22ra-juice-shop                       Built                                                                                                                                                                                   0.6s1s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s3s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6s5s
+[+] up 21/22ra-trust-center                     Built                                                                                                                                                                                   0.5s5s
+[+] up 21/22ra-juice-shop                       Built                                                                                                                                                                                   0.6s5s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s7s
+[+] up 21/22ra-code-service                     Built                                                                                                                                                                                   0.6s5s
+[+] up 21/22ra-juice-shop                       Built                                                                                                                                                                                   0.6s5s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s9s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6s1s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                   0.5s5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                   0.5s5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                   0.5s4s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                   2.5s6s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                   0.6s5s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                   0.5s7s
+ ⠋ Image infra-bug-bounty-service               Building                                                                                                                                                                                120.8s
+ ✔ Image infra-challenge-service                Built                                                                                                                                                                                   104.5s
+ ✔ Image infra-ai-redteam-service               Built                                                                                                                                                                                   104.5s
+ ✔ Image infra-pen-service-frontend             Built                                                                                                                                                                                   3.2ss
+ ✔ Image infra-pen-external-researcher-frontend Built                                                                                                                                                                                   3.2s
+ ✔ Image infra-pen-researcher-frontend          Built                                                                                                                                                                                   3.4s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                   1.3ss
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                   2.3ss
+ ✔ Image infra-training-researcher-frontend     Built                                                                                                                                                                                   2.4s
+ ✔ Image infra-vdp-org-admin-frontend           Built                                                                                                                                                                                   1.4ss
+ ✔ Image infra-admin-service-frontend           Built                                                                                                                                                                                   16.7s
+ ✔ Image infra-vdp-frontend-public              Built                                                                                                                                                                                   1.4s
+ ✔ Image infra-challenge-frontend               Built                                                                                                                                                                                   4.8s
+ ✔ Image infra-ai-redteam-frontend              Built                                                                                                                                                                                   4.8s
+Successfully tagged infra-bug-bounty-service:latest
+Sending build context to Docker daemon  1.271MB
+Step 1/8 : FROM node:22-alpine
+ ---> eaea451ff9df
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+[+] up 23/2408d33e
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s
+[+] up 56/56ra-code-service                     Built                                                                                                                                                                                   0.6s
+ ✔ Image infra-juice-shop                       Built                                                                                                                                                                                   0.6s
+ ✔ Image infra-code-service                     Built                                                                                                                                                                                   0.6s
+ ✔ Image infra-trust-center                     Built                                                                                                                                                                                   0.5s
+ ✔ Image infra-pen-service-backend              Built                                                                                                                                                                                   0.5s
+ ✔ Image infra-pen-researcher-backend           Built                                                                                                                                                                                   0.5s
+ ✔ Image infra-vdp-service                      Built                                                                                                                                                                                   2.5s
+ ✔ Image infra-training-service-backend         Built                                                                                                                                                                                   0.6s8s
+ ✔ Image infra-auth-service                     Built                                                                                                                                                                                   0.5s5s
+ ✔ Image infra-bug-bounty-service               Built                                                                                                                                                                                   120.8s
+ ✔ Image infra-challenge-service                Built                                                                                                                                                                                   104.5s
+ ✔ Image infra-ai-redteam-service               Built                                                                                                                                                                                   104.5s
+ ✔ Image infra-pen-service-frontend             Built                                                                                                                                                                                   3.2s
+ ✔ Image infra-pen-external-researcher-frontend Built                                                                                                                                                                                   3.2s
+ ✔ Image infra-pen-researcher-frontend          Built                                                                                                                                                                                   3.4s
+ ✔ Image infra-frontend                         Built                                                                                                                                                                                   1.3s
+ ✔ Image infra-training-organization-frontend   Built                                                                                                                                                                                   2.3s
+ ✔ Image infra-training-researcher-frontend     Built                                                                                                                                                                                   2.4ss
+ ✔ Image infra-vdp-org-admin-frontend           Built                                                                                                                                                                                   1.4s
+ ✔ Image infra-admin-service-frontend           Built                                                                                                                                                                                   16.7s
+ ✔ Image infra-vdp-frontend-public              Built                                                                                                                                                                                   1.4s
+ ✔ Image infra-challenge-frontend               Built                                                                                                                                                                                   4.8s
+ ✔ Image infra-ai-redteam-frontend              Built                                                                                                                                                                                   4.8s
+ ✔ Image infra-bug-bounty-frontend              Built                                                                                                                                                                                   5.1sur ✔ Network infra_default                        Created                                                                                                                                                                                 0.5s
+ ✔ Container auth-db                            Created                                                                                                                                                                                 0.8s
+ ✔ Container infra-minio-1                      Created                                                                                                                                                                                 0.8s
+ ✔ Container app-db                             Created                                                                                                                                                                                 0.8s
+ ✔ Container auth-redis                         Created                                                                                                                                                                                 0.8s
+ ✔ Container infra-mailpit-1                    Created                                                                                                                                                                                 0.8s
+ ✔ Container juice-shop                         Created                                                                                                                                                                                 0.8s
+ ✔ Container code-db                            Created                                                                                                                                                                                 0.8s
+ ✔ Container infra-postgres-1                   Created                                                                                                                                                                                 0.8s
+ ✔ Container trust-center-api                   Created                                                                                                                                                                                 0.4s
+ ✔ Container code-service                       Created                                                                                                                                                                                 0.3s
+ ✔ Container infra-ensure-service-databases-1   Created                                                                                                                                                                                 0.4s
+ ✔ Container pen-service-backend                Created                                                                                                                                                                                 0.4s
+ ✔ Container pen-researcher-backend             Created                                                                                                                                                                                 0.4s
+ ✔ Container auth-service                       Created                                                                                                                                                                                 0.4s
+ ✔ Container pen-service-frontend               Created                                                                                                                                                                                 0.7s
+ ✔ Container training-service-backend           Created                                                                                                                                                                                 0.4s
+ ✔ Container infra-vdp-service-1                Created                                                                                                                                                                                 0.7s
+ ✔ Container pen-external-researcher-frontend   Created                                                                                                                                                                                 0.7s
+ ✔ Container pen-researcher-frontend            Created                                                                                                                                                                                 0.7s
+ ✔ Container challenge-service                  Created                                                                                                                                                                                 0.6s
+ ✔ Container ai-redteam-service                 Created                                                                                                                                                                                 0.7s
+ ✔ Container antcrowd-frontend                  Created                                                                                                                                                                                 0.7s
+ ✔ Container bug-bounty-service                 Created                                                                                                                                                                                 0.7s
+ ✔ Container training-organization-frontend     Created                                                                                                                                                                                 0.5s
+ ✔ Container training-researcher-frontend       Created                                                                                                                                                                                 0.5s
+ ✔ Container challenge-frontend                 Created                                                                                                                                                                                 0.4s
+ ✔ Container admin-service-frontend             Created                                                                                                                                                                                 0.4s
+ ✔ Container infra-vdp-frontend-public-1        Created                                                                                                                                                                                 0.4s
+ ... 4 more                                                                                                                                                                                                                                   
+Attaching to admin-service-frontend, ai-redteam-frontend, ai-redteam-service, antcrowd-frontend, app-db, auth-db, auth-redis, auth-service, bug-bounty-frontend, bug-bounty-service, challenge-frontend, challenge-service, code-db, code-service, ensure-service-databases-1, mailpit-1, minio-1, postgres-1, traefik-1, vdp-frontend-public-1, vdp-org-admin-frontend-1, vdp-service-1, juice-shop, pen-external-researcher-frontend, pen-researcher-backend, pen-researcher-frontend, pen-service-backend, pen-service-frontend, training-organization-frontend, training-researcher-frontend, training-service-backend, trust-center-api
+Container code-db Waiting 
+Container app-db Waiting 
+auth-db  | 
+auth-db  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+auth-db  | 
+code-db  | 
+code-db  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+code-db  | 
+mailpit-1  | time="2026/05/06 11:02:34" level=info msg="[cors] allowed API origins: "
+mailpit-1  | time="2026/05/06 11:02:34" level=info msg="[smtpd] starting on [::]:1025 (no encryption)"
+mailpit-1  | time="2026/05/06 11:02:34" level=info msg="[http] starting on [::]:8025"
+mailpit-1  | time="2026/05/06 11:02:34" level=info msg="[http] accessible via http://localhost:8025/"
+auth-db    | 2026-05-06 11:02:34.482 UTC [1] LOG:  starting PostgreSQL 15.17 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+auth-db    | 2026-05-06 11:02:34.483 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+auth-db    | 2026-05-06 11:02:34.483 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+auth-db    | 2026-05-06 11:02:34.504 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+code-db    | 2026-05-06 11:02:34.514 UTC [1] LOG:  starting PostgreSQL 16.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+code-db    | 2026-05-06 11:02:34.515 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+code-db    | 2026-05-06 11:02:34.515 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+code-db    | 2026-05-06 11:02:34.542 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+app-db     | 
+app-db     | PostgreSQL Database directory appears to contain a database; Skipping initialization
+app-db     | 
+auth-db    | 2026-05-06 11:02:34.546 UTC [29] LOG:  database system was shut down at 2026-05-06 10:15:04 UTC
+code-db    | 2026-05-06 11:02:34.582 UTC [29] LOG:  database system was shut down at 2026-05-06 10:14:51 UTC
+code-db    | 2026-05-06 11:02:34.648 UTC [1] LOG:  database system is ready to accept connections
+auth-db    | 2026-05-06 11:02:34.640 UTC [1] LOG:  database system is ready to accept connections
+app-db     | 2026-05-06 11:02:34.678 UTC [1] LOG:  starting PostgreSQL 16.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+app-db     | 2026-05-06 11:02:34.678 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+app-db     | 2026-05-06 11:02:34.678 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+app-db     | 2026-05-06 11:02:34.717 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+app-db     | 2026-05-06 11:02:34.753 UTC [29] LOG:  database system was shut down at 2026-05-06 10:14:51 UTC
+app-db     | 2026-05-06 11:02:34.794 UTC [1] LOG:  database system is ready to accept connections
+Container auth-db Waiting 
+auth-redis  | 1:C 06 May 2026 11:02:34.920 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+auth-redis  | 1:C 06 May 2026 11:02:34.920 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+auth-redis  | 1:C 06 May 2026 11:02:34.920 * Redis version=7.4.8, bits=64, commit=00000000, modified=0, pid=1, just started
+auth-redis  | 1:C 06 May 2026 11:02:34.920 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+auth-redis  | 1:M 06 May 2026 11:02:34.922 * monotonic clock: POSIX clock_gettime
+auth-redis  | 1:M 06 May 2026 11:02:34.924 * Running mode=standalone, port=6379.
+auth-redis  | 1:M 06 May 2026 11:02:34.925 * Server initialized
+auth-redis  | 1:M 06 May 2026 11:02:34.926 * Ready to accept connections tcp
+Container infra-postgres-1 Waiting 
+Container infra-postgres-1 Waiting 
+Container infra-postgres-1 Waiting 
+postgres-1  | 
+postgres-1  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+postgres-1  | 
+postgres-1  | 2026-05-06 11:02:35.387 UTC [1] LOG:  starting PostgreSQL 15.15 (Debian 15.15-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+postgres-1  | 2026-05-06 11:02:35.388 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1  | 2026-05-06 11:02:35.388 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1  | 2026-05-06 11:02:35.415 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2026-05-06 11:02:35.468 UTC [29] LOG:  database system was shut down at 2026-05-06 10:15:03 UTC
+postgres-1  | 2026-05-06 11:02:35.531 UTC [1] LOG:  database system is ready to accept connections
+minio-1     | INFO: Formatting 1st pool, 1 set(s), 1 drives per set.
+minio-1     | INFO: WARNING: Host local has more than 0 drives of set. A host failure will result in data becoming unavailable.
+minio-1     | MinIO Object Storage Server
+minio-1     | Copyright: 2015-2026 MinIO, Inc.
+minio-1     | License: GNU AGPLv3 - https://www.gnu.org/licenses/agpl-3.0.html
+minio-1     | Version: RELEASE.2025-09-07T16-13-09Z (go1.24.6 linux/amd64)
+minio-1     | 
+minio-1     | API: http://172.18.0.3:9000  http://127.0.0.1:9000 
+minio-1     | WebUI: http://172.18.0.3:9101 http://127.0.0.1:9101  
+minio-1     | 
+minio-1     | Docs: https://docs.min.io
+Container code-db Healthy 
+Container app-db Healthy 
+Container auth-db Healthy 
+Container infra-postgres-1 Healthy 
+Container infra-postgres-1 Healthy 
+Container infra-postgres-1 Healthy 
+code-service  | 2026/05/06 11:02:41 code-service listening on :8080
+trust-center-api  | 2026/05/06 11:02:42 trust center service listening on :8080
+Container infra-ensure-service-databases-1 Waiting 
+Container infra-postgres-1 Waiting 
+Container infra-postgres-1 Waiting 
+Container infra-ensure-service-databases-1 Waiting 
+Container infra-postgres-1 Waiting 
+Container infra-ensure-service-databases-1 Waiting 
+Container infra-postgres-1 Waiting 
+Container infra-ensure-service-databases-1 Waiting 
+Container infra-ensure-service-databases-1 Waiting 
+Container infra-postgres-1 Waiting 
+Container pen-researcher-backend Waiting 
+Container pen-researcher-backend Waiting 
+Container pen-service-backend Waiting 
+pen-researcher-backend  | 2026/05/06 11:02:42 pen-researcher-backend listening on :8087
+pen-service-backend     | 2026/05/06 11:02:42 pen-service backend listening on :8086
+Container infra-postgres-1 Healthy 
+Container infra-postgres-1 Healthy 
+Container infra-postgres-1 Healthy 
+Container infra-postgres-1 Healthy 
+Container infra-postgres-1 Healthy 
+Container infra-ensure-service-databases-1 Exited 
+Container infra-ensure-service-databases-1 Exited 
+Container infra-ensure-service-databases-1 Exited 
+Container infra-ensure-service-databases-1 Exited 
+ensure-service-databases-1 exited with code 0
+Container infra-ensure-service-databases-1 Exited 
+auth-service                | 
+auth-service                | > antcrowd-auth-service@1.0.0 start
+auth-service                | > node src/server.js
+auth-service                | 
+antcrowd-frontend           | 
+antcrowd-frontend           | > antcrowd-frontend@0.1.0 dev
+antcrowd-frontend           | > vite --host 0.0.0.0 --port 5173
+antcrowd-frontend           | 
+Container training-service-backend Waiting 
+Container training-service-backend Waiting 
+Container challenge-service Waiting 
+Container bug-bounty-service Waiting 
+Container ai-redteam-service Waiting 
+Container pen-service-backend Waiting 
+Container infra-vdp-service-1 Waiting 
+Container infra-vdp-service-1 Waiting 
+Container infra-vdp-service-1 Waiting 
+Container training-service-backend Waiting 
+Container auth-service Waiting 
+vdp-service-1               | [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+vdp-service-1               |  - using env:	export GIN_MODE=release
+vdp-service-1               |  - using code:	gin.SetMode(gin.ReleaseMode)
+vdp-service-1               | 
+vdp-service-1               | 2026/05/06 11:02:47 vdp-service running on :8082 env=development
+vdp-service-1               | [GIN-debug] POST   /api/vdp/auth/login       --> vdp-service/handlers.(*Handler).LoginAuthUser-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/auth/bootstrap   --> vdp-service/handlers.(*Handler).BootstrapAuthUser-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/auth/register    --> vdp-service/handlers.(*Handler).RegisterAuthUser-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/public/security/:organization --> vdp-service/handlers.(*Handler).GetPublicVDP-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/public/reports   --> vdp-service/handlers.(*Handler).SubmitVulnerabilityReport-fm (5 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/organizations    --> vdp-service/handlers.(*Handler).ListOrganizations-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/organizations/:id --> vdp-service/handlers.(*Handler).GetOrganizationPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/procedures/template --> vdp-service/handlers.(*Handler).GetProcedureTemplate-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/organizations/:id/procedure --> vdp-service/handlers.(*Handler).GetProcedureByOrg-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/programs         --> vdp-service/handlers.(*Handler).ListPublicPrograms-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/reports          --> vdp-service/handlers.(*Handler).SubmitReportPublic-fm (5 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/reports/:id/status --> vdp-service/handlers.(*Handler).GetPublicReportStatus-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/reports/:id/comments --> vdp-service/handlers.(*Handler).AddReportCommentPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/reports/:id/comments --> vdp-service/handlers.(*Handler).ListReportCommentsPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/reports/:id/attachments --> vdp-service/handlers.(*Handler).UploadReportAttachmentPublic-fm (5 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/reports/:id/attachments --> vdp-service/handlers.(*Handler).ListReportAttachmentsPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/reports/:id/attachments/:attId --> vdp-service/handlers.(*Handler).GetReportAttachment-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/procedures/:id/document --> vdp-service/handlers.(*Handler).GetProcedureDocument-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/auth/me          --> vdp-service/handlers.(*Handler).GetCurrentAuthUser-fm (5 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/profile      --> vdp-service/handlers.(*Handler).GetOrgProfile-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PUT    /api/vdp/org/profile      --> vdp-service/handlers.(*Handler).UpdateOrgProfile-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/settings     --> vdp-service/handlers.(*Handler).GetOrgSettings-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PUT    /api/vdp/org/settings     --> vdp-service/handlers.(*Handler).UpdateOrgSettings-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/vdp          --> vdp-service/handlers.(*Handler).GetOrgVDP-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/notifications --> vdp-service/handlers.(*Handler).ListOrgNotifications-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /api/vdp/org/notifications/:id/read --> vdp-service/handlers.(*Handler).MarkNotificationRead-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/procedures       --> vdp-service/handlers.(*Handler).CreateProcedure-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PUT    /api/vdp/procedures/:id   --> vdp-service/handlers.(*Handler).UpdateProcedure-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/procedures/:id/document --> vdp-service/handlers.(*Handler).UploadProcedureDocument-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/org-admin/programs --> vdp-service/handlers.(*Handler).CreateVDPProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /api/vdp/org-admin/programs/:id/publish --> vdp-service/handlers.(*Handler).PublishVDPProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/programs         --> vdp-service/handlers.(*Handler).CreateProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /api/vdp/programs/:id     --> vdp-service/handlers.(*Handler).UpdateProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/metrics      --> vdp-service/handlers.(*Handler).GetOrgMetrics-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports      --> vdp-service/handlers.(*Handler).ListOrgReports-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports/export --> vdp-service/handlers.(*Handler).ExportOrgReportsCSV-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports/:id  --> vdp-service/handlers.(*Handler).GetOrgReport-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports/:id/triage --> vdp-service/handlers.(*Handler).GetReportTriageAssessmentOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/org/reports/:id/triage/run --> vdp-service/handlers.(*Handler).RunReportTriageAssessmentOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports/:id/comments --> vdp-service/handlers.(*Handler).ListReportCommentsOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports/:id/events --> vdp-service/handlers.(*Handler).ListReportEventsOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports/:id/attachments --> vdp-service/handlers.(*Handler).ListReportAttachmentsOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/org/reports/:id/attachments/:attId --> vdp-service/handlers.(*Handler).GetReportAttachmentOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /api/vdp/reports/:id/status --> vdp-service/handlers.(*Handler).UpdateReportStatus-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /api/vdp/org/reports/:id/assignee --> vdp-service/handlers.(*Handler).AssignReportOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/org/reports/:id/comments --> vdp-service/handlers.(*Handler).AddReportCommentOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/org/reports/:id/message --> vdp-service/handlers.(*Handler).SendReportMessageOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /api/vdp/procedures/:id/accept --> vdp-service/handlers.(*Handler).AcceptProcedure-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/my-reports       --> vdp-service/handlers.(*Handler).ListMyReports-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/admin/orgs       --> vdp-service/handlers.(*Handler).ListAdminOrganizations-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/admin/programs   --> vdp-service/handlers.(*Handler).ListAdminPrograms-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /api/vdp/admin/programs/:id --> vdp-service/handlers.(*Handler).UpdateAdminProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/admin/reports    --> vdp-service/handlers.(*Handler).ListAdminReports-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /api/vdp/admin/audit      --> vdp-service/handlers.(*Handler).ListAdminEvents-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /auth/login               --> vdp-service/handlers.(*Handler).LoginAuthUser-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /auth/register            --> vdp-service/handlers.(*Handler).RegisterAuthUser-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /auth/me                  --> vdp-service/handlers.(*Handler).GetCurrentAuthUser-fm (5 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/security/:organization --> vdp-service/handlers.(*Handler).GetPublicVDP-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /public/reports           --> vdp-service/handlers.(*Handler).SubmitVulnerabilityReport-fm (5 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/organizations     --> vdp-service/handlers.(*Handler).ListOrganizations-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/organizations/:id --> vdp-service/handlers.(*Handler).GetOrganizationPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/organizations/:id/procedure --> vdp-service/handlers.(*Handler).GetProcedureByOrg-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/programs          --> vdp-service/handlers.(*Handler).ListPublicPrograms-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/reports/:id/status --> vdp-service/handlers.(*Handler).GetPublicReportStatus-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /public/reports/:id/comments --> vdp-service/handlers.(*Handler).AddReportCommentPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/reports/:id/comments --> vdp-service/handlers.(*Handler).ListReportCommentsPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] POST   /public/reports/:id/attachments --> vdp-service/handlers.(*Handler).UploadReportAttachmentPublic-fm (5 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/reports/:id/attachments --> vdp-service/handlers.(*Handler).ListReportAttachmentsPublic-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/reports/:id/attachments/:attId --> vdp-service/handlers.(*Handler).GetReportAttachment-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /public/procedures/:id/document --> vdp-service/handlers.(*Handler).GetProcedureDocument-fm (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/profile        --> vdp-service/handlers.(*Handler).GetOrgProfile-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PUT    /org-admin/profile        --> vdp-service/handlers.(*Handler).UpdateOrgProfile-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/settings       --> vdp-service/handlers.(*Handler).GetOrgSettings-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PUT    /org-admin/settings       --> vdp-service/handlers.(*Handler).UpdateOrgSettings-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/vdp            --> vdp-service/handlers.(*Handler).GetOrgVDP-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /org-admin/procedures     --> vdp-service/handlers.(*Handler).CreateProcedure-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PUT    /org-admin/procedures/:id --> vdp-service/handlers.(*Handler).UpdateProcedure-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /org-admin/procedures/:id/document --> vdp-service/handlers.(*Handler).UploadProcedureDocument-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /org-admin/programs       --> vdp-service/handlers.(*Handler).CreateVDPProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /org-admin/programs/:id/publish --> vdp-service/handlers.(*Handler).PublishVDPProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /org-admin/programs/:id   --> vdp-service/handlers.(*Handler).UpdateProgram-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/metrics        --> vdp-service/handlers.(*Handler).GetOrgMetrics-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/reports        --> vdp-service/handlers.(*Handler).ListOrgReports-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/reports/export --> vdp-service/handlers.(*Handler).ExportOrgReportsCSV-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/reports/:id    --> vdp-service/handlers.(*Handler).GetOrgReport-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/reports/:id/triage --> vdp-service/handlers.(*Handler).GetReportTriageAssessmentOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /org-admin/reports/:id/triage/run --> vdp-service/handlers.(*Handler).RunReportTriageAssessmentOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /org-admin/reports/:id/status --> vdp-service/handlers.(*Handler).UpdateReportStatus-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /org-admin/reports/:id/assignee --> vdp-service/handlers.(*Handler).AssignReportOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /org-admin/reports/:id/comments --> vdp-service/handlers.(*Handler).AddReportCommentOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] POST   /org-admin/reports/:id/message --> vdp-service/handlers.(*Handler).SendReportMessageOrg-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /org-admin/notifications  --> vdp-service/handlers.(*Handler).ListOrgNotifications-fm (6 handlers)
+vdp-service-1               | [GIN-debug] PATCH  /org-admin/notifications/:id/read --> vdp-service/handlers.(*Handler).MarkNotificationRead-fm (6 handlers)
+vdp-service-1               | [GIN-debug] GET    /health                   --> main.main.func1 (4 handlers)
+vdp-service-1               | [GIN-debug] GET    /ready                    --> main.main.func2 (4 handlers)
+vdp-service-1               | [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+vdp-service-1               | Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+vdp-service-1               | [GIN-debug] Listening and serving HTTP on :8082
+antcrowd-frontend           | 
+antcrowd-frontend           |   VITE v5.4.21  ready in 2143 ms
+antcrowd-frontend           | 
+antcrowd-frontend           |   ➜  Local:   http://localhost:5173/
+antcrowd-frontend           |   ➜  Network: http://172.18.0.16:5173/
+challenge-service           | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+challenge-service           | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+juice-shop                  | info: Detected Node.js version v24.14.1 (OK)
+juice-shop                  | info: Detected OS linux (OK)
+juice-shop                  | info: Detected CPU x64 (OK)
+juice-shop                  | info: Configuration antcrowd validated (OK)
+juice-shop                  | info: Entity models 20 of 20 are initialized (OK)
+juice-shop                  | info: Required file server.js is present (OK)
+juice-shop                  | info: Required file index.html is present (OK)
+juice-shop                  | info: Required file styles.css is present (OK)
+juice-shop                  | info: Required file main.js is present (OK)
+juice-shop                  | info: Required file polyfills.js is present (OK)
+juice-shop                  | info: Required file matching /^hacking-instructor-.+\.js$/ is present (OK)
+juice-shop                  | info: Port 3000 is available (OK)
+juice-shop                  | info: Domain https://www.alchemy.com/ is reachable (OK)
+juice-shop                  | info: Chatbot training data botDefaultTrainingData.json validated (OK)
+ai-redteam-service          | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+
+
+ai-redteam-service          | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+
+bug-bounty-service          | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+bug-bounty-service          | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+vdp-service-1               | 2026/05/06 11:02:51 request_id=821fdbe094221bd744cb1e64e7e49fd9 method=GET path=/ready status=200 latency_ms=2
+Container infra-vdp-service-1 Healthy 
+Container infra-vdp-service-1 Healthy 
+Container infra-vdp-service-1 Healthy 
+Container pen-service-backend Healthy 
+Container pen-service-backend Healthy 
+Container pen-researcher-backend Healthy 
+Container pen-researcher-backend Healthy 
+challenge-service           | Traceback (most recent call last):
+challenge-service           |   File "/usr/local/bin/uvicorn", line 8, in <module>
+challenge-service           |     sys.exit(main())
+challenge-service           |              ^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1514, in __call__
+challenge-service           |     return self.main(*args, **kwargs)
+challenge-service           |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1435, in main
+challenge-service           |     rv = self.invoke(ctx)
+challenge-service           |          ^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1298, in invoke
+challenge-service           |     return ctx.invoke(self.callback, **ctx.params)
+challenge-service           |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 853, in invoke
+challenge-service           |     return callback(*args, **kwargs)
+challenge-service           |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 441, in main
+challenge-service           |     run(
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 617, in run
+challenge-service           |     server.run()
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 75, in run
+challenge-service           |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+challenge-service           |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/_compat.py", line 30, in asyncio_run
+challenge-service           |     return runner.run(main)
+challenge-service           |            ^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+challenge-service           |     return self._loop.run_until_complete(task)
+challenge-service           |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 79, in serve
+challenge-service           |     await self._serve(sockets)
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 86, in _serve
+challenge-service           |     config.load()
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 449, in load
+challenge-service           |     self.loaded_app = import_from_string(self.app)
+challenge-service           |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+challenge-service           |     raise exc from None
+challenge-service           |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+challenge-service           |     module = importlib.import_module(module_str)
+challenge-service           |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+challenge-service           |     return _bootstrap._gcd_import(name[level:], package, level)
+challenge-service           |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service           |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+challenge-service           |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+challenge-service           |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+challenge-service           |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+challenge-service           |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+challenge-service           |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+challenge-service           |   File "/app/src/main.py", line 13, in <module>
+challenge-service           |     from .auth_introspect import (
+challenge-service           |   File "/app/src/auth_introspect.py", line 12, in <module>
+challenge-service           |     import requests
+challenge-service           | ModuleNotFoundError: No module named 'requests'
+auth-service                | Platform admin ready for platform-admin@antcrowd.local
+auth-service                | Presentation demo accounts ensured: org-admin@antcrowd.local, pending-org@antcrowd.local, internal1@antcrowd.local, alpha@crowd.local
+auth-service                | Auth service listening on 8080
+training-service-backend    | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+training-service-backend    | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+vdp-org-admin-frontend-1    | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+vdp-org-admin-frontend-1    | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+vdp-org-admin-frontend-1    | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+vdp-org-admin-frontend-1    | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+vdp-org-admin-frontend-1    | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+vdp-org-admin-frontend-1    | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+vdp-org-admin-frontend-1    | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+vdp-org-admin-frontend-1    | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+vdp-frontend-public-1       | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+vdp-frontend-public-1       | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+vdp-org-admin-frontend-1    | /docker-entrypoint.sh: Configuration complete; ready for start up
+vdp-frontend-public-1       | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+vdp-frontend-public-1       | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+
+
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: using the "epoll" event method
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: nginx/1.27.5
+pen-service-frontend        | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+pen-service-frontend        | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+
+
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: built by gcc 14.2.0 (Alpine 14.2.0) 
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: OS: Linux 6.16.8+kali-amd64
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1073741816:1073741816
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker processes
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 28
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 29
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 30
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 31
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 32
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 33
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 34
+vdp-org-admin-frontend-1    | 2026/05/06 11:02:56 [notice] 1#1: start worker process 35
+pen-service-frontend        | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+vdp-frontend-public-1       | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+vdp-frontend-public-1       | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+vdp-frontend-public-1       | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+vdp-frontend-public-1       | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+vdp-frontend-public-1       | /docker-entrypoint.sh: Configuration complete; ready for start up
+pen-service-frontend        | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: using the "epoll" event method
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: nginx/1.27.5
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: built by gcc 14.2.0 (Alpine 14.2.0) 
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: OS: Linux 6.16.8+kali-amd64
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1073741816:1073741816
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker processes
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 29
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 30
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 31
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 32
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 33
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 34
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 35
+vdp-frontend-public-1       | 2026/05/06 11:02:56 [notice] 1#1: start worker process 36
+pen-service-frontend        | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+pen-service-frontend        | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+pen-service-frontend        | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+pen-service-frontend        | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+pen-service-frontend        | /docker-entrypoint.sh: Configuration complete; ready for start up
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: using the "epoll" event method
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: nginx/1.27.5
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: built by gcc 14.2.0 (Alpine 14.2.0) 
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: OS: Linux 6.16.8+kali-amd64
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1073741816:1073741816
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker processes
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 29
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 30
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 31
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 32
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 33
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 34
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 35
+pen-service-frontend        | 2026/05/06 11:02:56 [notice] 1#1: start worker process 36
+Container challenge-service Error dependency challenge-service failed to start
+pen-external-researcher-frontend  | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+pen-external-researcher-frontend  | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+pen-external-researcher-frontend  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+pen-external-researcher-frontend  | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+pen-external-researcher-frontend  | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+pen-external-researcher-frontend  | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+pen-external-researcher-frontend  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+pen-external-researcher-frontend  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+pen-external-researcher-frontend  | /docker-entrypoint.sh: Configuration complete; ready for start up
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: using the "epoll" event method
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: nginx/1.27.5
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: built by gcc 14.2.0 (Alpine 14.2.0) 
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: OS: Linux 6.16.8+kali-amd64
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1073741816:1073741816
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker processes
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 29
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 30
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 31
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 32
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 33
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 34
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 35
+pen-external-researcher-frontend  | 2026/05/06 11:02:57 [notice] 1#1: start worker process 36
+pen-researcher-frontend           | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+pen-researcher-frontend           | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+pen-researcher-frontend           | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+pen-researcher-frontend           | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+pen-researcher-frontend           | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+pen-researcher-frontend           | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+pen-researcher-frontend           | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+pen-researcher-frontend           | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+pen-researcher-frontend           | /docker-entrypoint.sh: Configuration complete; ready for start up
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: using the "epoll" event method
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: nginx/1.27.5
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: built by gcc 14.2.0 (Alpine 14.2.0) 
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: OS: Linux 6.16.8+kali-amd64
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1073741816:1073741816
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker processes
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 28
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 29
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 30
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 31
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 32
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 33
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 34
+pen-researcher-frontend           | 2026/05/06 11:02:57 [notice] 1#1: start worker process 35
+challenge-service exited with code 1 (restarting)
+ai-redteam-service                | INFO:     Started server process [8]
+ai-redteam-service                | INFO:     Waiting for application startup.
+postgres-1                        | 2026-05-06 11:02:58.747 UTC [78] ERROR:  column "contact_email" of relation "ai_redteam_programs" already exists
+postgres-1                        | 2026-05-06 11:02:58.747 UTC [78] STATEMENT:  ALTER TABLE ai_redteam_programs ADD COLUMN contact_email VARCHAR(200) NOT NULL DEFAULT ''
+bug-bounty-service                | INFO:     Started server process [8]
+bug-bounty-service                | INFO:     Waiting for application startup.
+ai-redteam-service                | INFO:     Application startup complete.
+ai-redteam-service                | INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
+postgres-1                        | 2026-05-06 11:02:58.810 UTC [79] ERROR:  column "contact_email" of relation "bug_bounty_programs" already exists
+postgres-1                        | 2026-05-06 11:02:58.810 UTC [79] STATEMENT:  ALTER TABLE bug_bounty_programs ADD COLUMN contact_email VARCHAR(200) NOT NULL DEFAULT ''
+challenge-service                 | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+challenge-service                 | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+bug-bounty-service                | INFO:     Application startup complete.
+bug-bounty-service                | INFO:     Uvicorn running on http://0.0.0.0:8005 (Press CTRL+C to quit)
+challenge-service                 | Traceback (most recent call last):
+challenge-service                 |   File "/usr/local/bin/uvicorn", line 8, in <module>
+challenge-service                 |     sys.exit(main())
+challenge-service                 |              ^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1514, in __call__
+challenge-service                 |     return self.main(*args, **kwargs)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1435, in main
+challenge-service                 |     rv = self.invoke(ctx)
+challenge-service                 |          ^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1298, in invoke
+challenge-service                 |     return ctx.invoke(self.callback, **ctx.params)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 853, in invoke
+challenge-service                 |     return callback(*args, **kwargs)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 441, in main
+challenge-service                 |     run(
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 617, in run
+challenge-service                 |     server.run()
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 75, in run
+challenge-service                 |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/_compat.py", line 30, in asyncio_run
+challenge-service                 |     return runner.run(main)
+challenge-service                 |            ^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+challenge-service                 |     return self._loop.run_until_complete(task)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 79, in serve
+challenge-service                 |     await self._serve(sockets)
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 86, in _serve
+challenge-service                 |     config.load()
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 449, in load
+challenge-service                 |     self.loaded_app = import_from_string(self.app)
+challenge-service                 |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+challenge-service                 |     raise exc from None
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+challenge-service                 |     module = importlib.import_module(module_str)
+challenge-service                 |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+challenge-service                 |     return _bootstrap._gcd_import(name[level:], package, level)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+challenge-service                 |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+challenge-service                 |   File "/app/src/main.py", line 13, in <module>
+challenge-service                 |     from .auth_introspect import (
+challenge-service                 |   File "/app/src/auth_introspect.py", line 12, in <module>
+challenge-service                 |     import requests
+challenge-service                 | ModuleNotFoundError: No module named 'requests'
+vdp-service-1                     | 2026/05/06 11:03:02 request_id=a6ebb56f06c1ff9bda3bc98698302138 method=GET path=/ready status=200 latency_ms=1
+challenge-service exited with code 1 (restarting)
+Container auth-service Healthy 
+challenge-service                 | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+challenge-service                 | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+ai-redteam-service                | INFO:     127.0.0.1:33930 - "GET /health HTTP/1.1" 200 OK
+bug-bounty-service                | INFO:     127.0.0.1:35610 - "GET /health HTTP/1.1" 200 OK
+Container bug-bounty-service Healthy 
+Container ai-redteam-service Healthy 
+challenge-service                 | Traceback (most recent call last):
+challenge-service                 |   File "/usr/local/bin/uvicorn", line 8, in <module>
+challenge-service                 |     sys.exit(main())
+challenge-service                 |              ^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1514, in __call__
+challenge-service                 |     return self.main(*args, **kwargs)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1435, in main
+challenge-service                 |     rv = self.invoke(ctx)
+challenge-service                 |          ^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1298, in invoke
+challenge-service                 |     return ctx.invoke(self.callback, **ctx.params)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 853, in invoke
+challenge-service                 |     return callback(*args, **kwargs)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 441, in main
+challenge-service                 |     run(
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 617, in run
+challenge-service                 |     server.run()
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 75, in run
+challenge-service                 |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/_compat.py", line 30, in asyncio_run
+challenge-service                 |     return runner.run(main)
+challenge-service                 |            ^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+challenge-service                 |     return self._loop.run_until_complete(task)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 79, in serve
+challenge-service                 |     await self._serve(sockets)
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 86, in _serve
+challenge-service                 |     config.load()
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 449, in load
+challenge-service                 |     self.loaded_app = import_from_string(self.app)
+challenge-service                 |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+challenge-service                 |     raise exc from None
+challenge-service                 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+challenge-service                 |     module = importlib.import_module(module_str)
+challenge-service                 |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+challenge-service                 |     return _bootstrap._gcd_import(name[level:], package, level)
+challenge-service                 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+challenge-service                 |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+challenge-service                 |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+challenge-service                 |   File "/app/src/main.py", line 13, in <module>
+challenge-service                 |     from .auth_introspect import (
+challenge-service                 |   File "/app/src/auth_introspect.py", line 12, in <module>
+challenge-service                 |     import requests
+challenge-service                 | ModuleNotFoundError: No module named 'requests'
+training-service-backend          | INFO:     Started server process [16]
+training-service-backend          | INFO:     Waiting for application startup.
+training-service-backend          | INFO:     Application startup complete.
+training-service-backend          | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+training-service-backend          | INFO:     127.0.0.1:49350 - "GET /ready HTTP/1.1" 200 OK
+Container training-service-backend Healthy 
+Container training-service-backend Healthy 
+Container training-service-backend Healthy 
+training-organization-frontend    | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+training-organization-frontend    | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+training-organization-frontend    | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+training-organization-frontend    | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+training-organization-frontend    | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+training-organization-frontend    | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+training-organization-frontend    | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+training-organization-frontend    | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+training-organization-frontend    | /docker-entrypoint.sh: Configuration complete; ready for start up
+training-researcher-frontend      | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+training-researcher-frontend      | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+training-researcher-frontend      | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+dependency failed to start: container challenge-service is unhealthy
+
+
